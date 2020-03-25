@@ -1,0 +1,3 @@
+numpy==1.17.0
+opencv-python==3.4.5.20
+scikit-image==0.14.2
