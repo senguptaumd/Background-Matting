@@ -5,8 +5,9 @@ By Soumyadip Sengupta, Vivek Jayaram, Brian Curless, Steve Seitz, and Ira Kemelm
 
 This paper will be presented in IEEE CVPR 2020.
 
-[**Project Page**](http://grail.cs.washington.edu/projects/Background-Matting/)
+# [**Project Page**](http://grail.cs.washington.edu/projects/Background-Matting/)
 
+Go to Project page for additional details and results.
 
 ## Project members ##
 
