@@ -111,8 +111,17 @@ For best results capture images following these guidelines:
 	- The above restirctions do not apply for images captured with fixed camera (on a tripod)
 
 	 
+## Training code
 
+We will also release the training code, which will allow users to train on labelled data and also on unlabelled real data.
 
+** Coming soon ... **
+
+## Dataset
+
+We collected 50 videos with both fixed and hand-held camera in indoor and outdoor settings. We plan to release this data to encourage future research on improving background matting.
+
+** Coming soon ... **
 
 ## Citation
 If you use this code for your research, please consider citing:
