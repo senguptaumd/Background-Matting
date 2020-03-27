@@ -84,7 +84,7 @@ list_im=glob.glob(dir_name + '/*_img.png'); list_im.sort()
 for i in range(0,len(list_im)):
 
 	image = cv2.imread(list_im[i],cv2.IMREAD_COLOR)
-	back = cv2.imread(list_im[i].replace('img','backo'),cv2.IMREAD_COLOR)
+	back = cv2.imread(list_im[i].replace('img','back'),cv2.IMREAD_COLOR)
 	mask = cv2.imread(list_im[i].replace('img','masksDL'))
 
 	back_new = adjustExposure(image,back,mask[...,0])
