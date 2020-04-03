@@ -12,7 +12,7 @@ Go to Project page for additional details and results.
 ## Project members ##
 
 * [Soumyadip Sengupta](https://homes.cs.washington.edu/~soumya91/), University of Washington
-* [Vivek Jayaram](http://www.vivekjayaram.com/), University of Washington
+* [Vivek Jayaram](http://www.vivekjayaram.com/research), University of Washington
 * [Brian Curless](https://homes.cs.washington.edu/~curless/), University of Washington
 * [Steve Seitz](https://homes.cs.washington.edu/~seitz/), University of Washington
 * [Ira Kemelmacher-Shlizerman](https://homes.cs.washington.edu/~kemelmi/), University of Washington
