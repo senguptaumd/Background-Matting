@@ -9,6 +9,8 @@ This paper will be presented in IEEE CVPR 2020.
 
 Go to Project page for additional details and results.
 
+## [Paper (Arxiv)](https://arxiv.org/abs/2004.00626)
+
 ## Project members ##
 
 * [Soumyadip Sengupta](https://homes.cs.washington.edu/~soumya91/), University of Washington
