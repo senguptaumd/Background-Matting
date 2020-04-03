@@ -125,6 +125,10 @@ We collected 50 videos with both fixed and hand-held camera in indoor and outdoo
 
 **Coming soon ...**
 
+## Notes
+
+We are eager to hear how our algorithm works on your images/videos. If the algorithm fails on your data, please feel free to share it with us at soumya91@cs.washington.edu. This will help us in improving our algorithm for future research. Also, feel free to share any cool results.
+
 ## Citation
 If you use this code for your research, please consider citing:
 ```
