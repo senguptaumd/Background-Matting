@@ -29,7 +29,7 @@ Clone repository:
 git clone https://github.com/senguptaumd/Background-Matting.git
 ```
 
-Please use Python 3. Create an [Anaconda](https://www.anaconda.com/distribution/) environment and install the dependencies. Our code is tested with Pytorch=1.1.0, Tensorflow=1.4 with cuda10.0
+Please use Python 3. Create an [Anaconda](https://www.anaconda.com/distribution/) environment and install the dependencies. Our code is tested with Pytorch=1.1.0, Tensorflow=1.14 with cuda10.0
 
 ```
 conda create --name back-matting python=3.6
@@ -43,7 +43,7 @@ export PATH=$PATH:/usr/local/cuda-10.0/bin
 Install PyTorch, Tensorflow (needed for segmentation) and dependencies
 ```
 conda install pytorch=1.1.0 torchvision cudatoolkit=10.0 -c pytorch
-pip install tensorflow-gpu=1.4.0
+pip install tensorflow-gpu=1.14.0
 pip install -r requirements.txt
 
 ```
