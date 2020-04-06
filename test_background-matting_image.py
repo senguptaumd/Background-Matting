@@ -31,7 +31,7 @@ parser.add_argument('-tb', '--target_back', type=str,help='Directory to save the
 args=parser.parse_args()
 
 #input model
-model_main_dir='models/' + args.trained_model + '/';
+model_main_dir='Models/' + args.trained_model + '/';
 #input data path
 data_path=args.input_dir
 #target background path
