@@ -23,21 +23,21 @@ Go to Project page for additional details and results.
 This work is licensed under the [Creative Commons Attribution NonCommercial ShareAlike 4.0 License](https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode).
 
 ## Summary ##
-- [Updates](##updates) 
-- [Getting Started](##getting-started)
+- [Updates](#updates) 
+- [Getting Started](#getting-started)
 - [Inference Code on images](#run-the-inference-code-on-sample-images)
 - [Inference Code on videos](#run-the-inference-code-on-sample-videos)
 - [Notes on capturing images](#notes-on-capturing-images)
 - [Training code (coming soon ...)](#training-code)
 - [Captured Data (coming soon ...)](#dataset)
-- [Citations](#citations)
+- [Citations](#citation)
 
 ## **Updates** ##
 April 8, 2020
-- [Includes testing code to replace background for videos](#run-the-inference-code-on-sample-videos)
-- Bud fixes
+- [Testing code to replace background for videos](#run-the-inference-code-on-sample-videos)
+- Bug fixes
 	- Turning off `adjustExposure()` for bias-gain correction in `test_pre_processing.py`. (Bug found, need to be fixed)
-	- Incorporating 'uncropping' operation in `test_background-matting_image.py`. (Output will be same resolution and aspect-ratio as input)
+	- Incorporating 'uncropping' operation in `test_background-matting_image.py`. (Output will be of same resolution and aspect-ratio as input)
 
 
 ## Getting Started 
