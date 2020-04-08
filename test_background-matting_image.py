@@ -12,7 +12,6 @@ import torch.nn as nn
 from torch.autograd import Variable
 import torch.backends.cudnn as cudnn
 
-#from functions_io import *
 from functions import *
 from networks import ResnetConditionHR
 
@@ -34,10 +33,17 @@ args=parser.parse_args()
 model_main_dir='Models/' + args.trained_model + '/';
 #input data path
 data_path=args.input_dir
-#target background path
-back_img10=cv2.imread(args.target_back); back_img10=cv2.cvtColor(back_img10,cv2.COLOR_BGR2RGB);
-#Green-screen background
-back_img20=np.zeros(back_img10.shape); back_img20[...,0]=120; back_img20[...,1]=255; back_img20[...,2]=155;
+
+if os.path.isdir(args.target_back):
+	args.video=True
+	print('Using video mode')
+else:
+	args.video=False
+	print('Using image mode')
+	#target background path
+	back_img10=cv2.imread(args.target_back); back_img10=cv2.cvtColor(back_img10,cv2.COLOR_BGR2RGB);
+	#Green-screen background
+	back_img20=np.zeros(back_img10.shape); back_img20[...,0]=120; back_img20[...,1]=255; back_img20[...,2]=155;
 
 
 
@@ -64,9 +70,7 @@ if not os.path.exists(result_path):
 	os.makedirs(result_path)
 
 for i in range(0,len(test_imgs)):
-	filename = test_imgs[i]
-	image_name = filename.split('.')[0]
-	
+	filename = test_imgs[i]	
 	#original image
 	bgr_img = cv2.imread(os.path.join(data_path, filename)); bgr_img=cv2.cvtColor(bgr_img,cv2.COLOR_BGR2RGB);
 
@@ -75,19 +79,42 @@ for i in range(0,len(test_imgs)):
 
 	#segmentation mask
 	rcnn = cv2.imread(os.path.join(data_path, filename.replace('_img','_masksDL')),0);
-	
+
+	if args.video: #if video mode, load target background frames
+		#target background path
+		back_img10=cv2.imread(os.path.join(args.target_back,filename.replace('_img.png','.png'))); back_img10=cv2.cvtColor(back_img10,cv2.COLOR_BGR2RGB);
+		#Green-screen background
+		back_img20=np.zeros(back_img10.shape); back_img20[...,0]=120; back_img20[...,1]=255; back_img20[...,2]=155;
+
+		#create multiple frames with adjoining frames
+		gap=2
+		multi_fr_w=np.zeros((bgr_img.shape[0],bgr_img.shape[1],4))
+		idx=[i-2*gap,i-gap,i+gap,i+2*gap]
+		for t in range(0,4):
+			if idx[t]<0:
+				idx[t]=len(test_imgs)+idx[t]
+			elif idx[t]>=len(test_imgs):
+				idx[t]=idx[t]-len(test_imgs)
+
+			file_tmp=test_imgs[idx[t]]
+			bgr_img_mul = cv2.imread(os.path.join(data_path, file_tmp));
+			multi_fr_w[...,t]=cv2.cvtColor(bgr_img_mul,cv2.COLOR_BGR2GRAY);
+	else:
+		## create the multi-frame
+		multi_fr_w=np.zeros((bgr_img.shape[0],bgr_img.shape[1],4))
+		multi_fr_w[...,0] = cv2.cvtColor(bgr_img,cv2.COLOR_BGR2GRAY);
+		multi_fr_w[...,1] = multi_fr_w[...,0]
+		multi_fr_w[...,2] = multi_fr_w[...,0]
+		multi_fr_w[...,3] = multi_fr_w[...,0]
+
+		
 	#crop tightly
 	bgr_img0=bgr_img; bg_im0=bg_im;
 	bbox=get_bbox(rcnn,R=bgr_img0.shape[0],C=bgr_img0.shape[1])
 
-	crop_list=[bgr_img,bg_im,rcnn,back_img10,back_img20]
+	crop_list=[bgr_img,bg_im,rcnn,back_img10,back_img20,multi_fr_w]
 	crop_list=crop_images(crop_list,reso,bbox)
-	bgr_img=crop_list[0]; bg_im=crop_list[1]; rcnn=crop_list[2]; back_img1=crop_list[3]; back_img2=crop_list[4]
-
-
-	# bgr_img, rcnn, bg_im, back_img1, bbox = test_crop_as(bgr_img,bg_im,back_img10,rcnn,reso,R=bgr_img0.shape[0],C=bgr_img0.shape[1])
-	# _,_,_, back_img2, _ = test_crop_as(bgr_img0,back_img20,back_img20,rcnn,reso,R=bgr_img0.shape[0],C=bgr_img0.shape[1])
-	# seg=rcnn
+	bgr_img=crop_list[0]; bg_im=crop_list[1]; rcnn=crop_list[2]; back_img1=crop_list[3]; back_img2=crop_list[4]; multi_fr=crop_list[5]
 
 	#process segmentation mask
 	kernel_er = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3))
@@ -108,13 +135,6 @@ for i in range(0,len(test_imgs)):
 	rcnn=cv2.GaussianBlur(rcnn.astype(np.float32),(31,31),0)
 	rcnn=(255*rcnn).astype(np.uint8)
 	rcnn=np.delete(rcnn, range(reso[0],reso[0]+K), 0)
-
-	## create the multi-frame
-	multi_fr=np.zeros((bgr_img.shape[0],bgr_img.shape[1],4))
-	multi_fr[...,0] = cv2.cvtColor(bgr_img,cv2.COLOR_BGR2GRAY);
-	multi_fr[...,1] = multi_fr[...,0]
-	multi_fr[...,2] = multi_fr[...,0]
-	multi_fr[...,3] = multi_fr[...,0]
 
 
 	#convert to torch
@@ -150,14 +170,19 @@ for i in range(0,len(test_imgs)):
 
 		fg_out=to_image(fg_pred[0,...]); fg_out=fg_out*np.expand_dims((alpha_out.astype(float)/255>0.01).astype(float),axis=2); fg_out=(255*fg_out).astype(np.uint8)
 
-	#compose
-	comp_im_tr1=composite4(fg_out,back_img1,alpha_out)
-	comp_im_tr2=composite4(fg_out,back_img2,alpha_out)
+		#Uncrop
+		R0=bgr_img0.shape[0];C0=bgr_img0.shape[1]
+		alpha_out0=uncrop(alpha_out,bbox,R0,C0)
+		fg_out0=uncrop(fg_out,bbox,R0,C0)
 
-	cv2.imwrite(result_path+'/{}_out.png'.format(i), alpha_out)
-	cv2.imwrite(result_path+'/{}_fg.png'.format(i), cv2.cvtColor(fg_out,cv2.COLOR_BGR2RGB))
-	cv2.imwrite(result_path+'/{}_compose.png'.format(i), cv2.cvtColor(comp_im_tr1,cv2.COLOR_BGR2RGB))
-	cv2.imwrite(result_path+'/{}_matte.png'.format(i), cv2.cvtColor(comp_im_tr2,cv2.COLOR_BGR2RGB))
+	#compose
+	comp_im_tr1=composite4(fg_out0,back_img10,alpha_out0)
+	comp_im_tr2=composite4(fg_out0,back_img20,alpha_out0)
+
+	cv2.imwrite(result_path+'/'+filename.replace('_img','_out'), alpha_out0)
+	cv2.imwrite(result_path+'/'+filename.replace('_img','_fg'), cv2.cvtColor(fg_out0,cv2.COLOR_BGR2RGB))
+	cv2.imwrite(result_path+'/'+filename.replace('_img','_compose'), cv2.cvtColor(comp_im_tr1,cv2.COLOR_BGR2RGB))
+	cv2.imwrite(result_path+'/'+filename.replace('_img','_matte').format(i), cv2.cvtColor(comp_im_tr2,cv2.COLOR_BGR2RGB))
 
 	
 	print('Done: ' + str(i+1) + '/' + str(len(test_imgs)))
