@@ -120,7 +120,7 @@ for i in range(0,len(list_im)):
 	image = cv2.imread(list_im[i])
 	mask = cv2.imread(list_im[i].replace('img','masksDL'))
 
-	back_align = alignImages(back, image,masksDL)
+	back_align = alignImages(back, image,mask)
 
 	cv2.imwrite(list_im[i].replace('img','back'),back_align)
 
