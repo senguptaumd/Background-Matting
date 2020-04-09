@@ -42,17 +42,10 @@ April 9, 2020
 	- [Testing code to replace background for videos](#run-the-inference-code-on-sample-videos)
 
 April 8, 2020
-<<<<<<< HEAD
-- <!---[Testing code to replace background for videos](#run-the-inference-code-on-sample-videos) --->
-- Bug fixes
-	- Turning off `adjustExposure()` for bias-gain correction in `test_pre_processing.py`. (Bug found, need to be fixed)
-	- Incorporating 'uncropping' operation in `test_background-matting_image.py`. (Output will be of same resolution and aspect-ratio as input)
-=======
 - Issues:
 	- Turning off adjustExposure() for bias-gain correction in test_pre_processing.py. (Bug found, need to be fixed)
 	- Incorporating 'uncropping' operation in test_background-matting_image.py. (Output will be of same resolution and aspect-ratio as input)
 
->>>>>>> “Update”
 
 
 ## Getting Started 
@@ -136,8 +129,6 @@ python test_background-matting_image.py -m real-hand-held -i sample_data/input/ 
 ```
 For images taken with fixed camera (with a tripod), choose `-m real-fixed-cam` for best results. `-m syn-comp-adobe` lets you use the model trained on synthetic-composite Adobe dataset, without real data (worse performance).
 
-<<<<<<< HEAD
-=======
 ## Run the inference code on sample videos
 
 This is almost exactly similar as that of the image with few small changes.
@@ -200,7 +191,6 @@ cd Background-Matting/sample_video
 ffmpeg -r 60 -f image2 -i output/%04d_matte.png -vcodec libx264 -crf 15 -s 1280x720 -pix_fmt yuv420p teaser_matte.mp4
 ffmpeg -r 60 -f image2 -i output/%04d_compose.png -vcodec libx264 -crf 15 -s 1280x720 -pix_fmt yuv420p teaser_compose.mp4
 ```
->>>>>>> “Update”
 
 Repeat same for `sample_video_fixed`
 
