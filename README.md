@@ -34,7 +34,7 @@ This work is licensed under the [Creative Commons Attribution NonCommercial Shar
 
 ## **Updates** ##
 April 8, 2020
-- [Testing code to replace background for videos](#run-the-inference-code-on-sample-videos)
+- <!---[Testing code to replace background for videos](#run-the-inference-code-on-sample-videos) --->
 - Bug fixes
 	- Turning off `adjustExposure()` for bias-gain correction in `test_pre_processing.py`. (Bug found, need to be fixed)
 	- Incorporating 'uncropping' operation in `test_background-matting_image.py`. (Output will be of same resolution and aspect-ratio as input)
@@ -115,54 +115,6 @@ python test_background-matting_image.py -m real-hand-held -i sample_data/input/ 
 ```
 For images taken with fixed camera (with a tripod), choose `-m real-fixed-cam` for best results. `-m syn-comp-adobe` lets you use the model trained on synthetic-composite Adobe dataset, without real data (worse performance).
 
-## Run the inference code on sample videos
-
-This is almost exactly similar as that of the image with few small changes.
-
-### Data
-
-To perform Background Matting based green-screening, you need to capture:
-- (a) Video with the subject (`teaser.mov`)
-- (b) Image of the background without the subject (use `teaser_back.png` extension)
-- (c) Target background to insert the subject (place in `fountain.mov`)
-
-Use `sample_video/` folder for testing and prepare your own data based on that.
-
-### Pre-processing
-
-1. Frame extraction:
-
-```
-cd Background-Matting/sample_video
-ffmpeg -i teaser.mov input/%04d_img.png -hide_banner
-ffmpeg -i fountain.mov background/%04d.png -hide_banner
-```
-
-2. Segmentation
-```
-cd Background-Matting/
-git clone https://github.com/tensorflow/models.git
-cd models/research/
-export PYTHONPATH=$PYTHONPATH:`pwd`:`pwd`/slim
-cd ../..
-python test_segmentation_deeplab.py -i sample_video/input
-```
-
-3. Alignment
-Run `python test_pre_process_video.py -i sample_video/input -v_name sample_video/teaser_back.png` for pre-processing.
-
-### Background Matting
-
-```bash
-python test_background-matting_image.py -m real-hand-held -i sample_video/input/ -o sample_video/output/ -tb sample_video/background/
-```
-
-To obtain the video from the output frames, run:
-```
-cd Background-Matting/sample_video
-ffmpeg -r 60 -f image2 -i output/%04d_matte.png -vcodec libx264 -crf 15 -s 1280x720 -pix_fmt yuv420p teaser_matte.mp4
-ffmpeg -r 60 -f image2 -i output/%04d_compose.png -vcodec libx264 -crf 15 -s 1280x720 -pix_fmt yuv420p teaser_compose.mp4
-```
 
 ## Notes on capturing images
 
