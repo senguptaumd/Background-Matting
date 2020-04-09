@@ -91,6 +91,8 @@ Use `sample_data/` folder for testing and prepare your own data based on that. T
 
 Please download the pre-trained models from [Google Drive](https://drive.google.com/drive/folders/1WLDBC_Q-cA72QC8bB-Rdj53UB2vSPnXv?usp=sharing) and place `Models/` folder inside `Background-Matting/`.
 
+Note: `syn-comp-adobe-trainset` model was trained on the training set of the Adobe dataset. This was the model used for numerical evaluation on Adobe dataset.
+
 
 ### Pre-processing
 
