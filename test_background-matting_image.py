@@ -24,8 +24,10 @@ print('CUDA Device: ' + os.environ["CUDA_VISIBLE_DEVICES"])
 parser = argparse.ArgumentParser(description='Background Matting.')
 parser.add_argument('-m', '--trained_model', type=str, default='real-fixed-cam',choices=['real-fixed-cam', 'real-hand-held', 'syn-comp-adobe'],help='Trained background matting model')
 parser.add_argument('-o', '--output_dir', type=str, required=True,help='Directory to save the output results. (required)')
-parser.add_argument('-i', '--input_dir', type=str, required=True,help='Directory to save the output results. (required)')
-parser.add_argument('-tb', '--target_back', type=str,help='Directory to save the output results. (required)')
+parser.add_argument('-i', '--input_dir', type=str, required=True,help='Directory to load input images. (required)')
+parser.add_argument('-tb', '--target_back', type=str,help='Directory to load the target background.')
+parser.add_argument('-b', '--back', type=str,default=None,help='Captured background image. (only use for inference on videos with fixed camera')
+
 
 args=parser.parse_args()
 
@@ -57,6 +59,10 @@ netM.cuda(); netM.eval()
 cudnn.benchmark=True
 reso=(512,512) #input reoslution to the network
 
+#load captured background for video mode, fixed camera
+if args.back is not None:
+	bg_im0=cv2.imread(args.back); bg_im0=cv2.cvtColor(bg_im0,cv2.COLOR_BGR2RGB);
+
 
 #Create a list of test images
 test_imgs = [f for f in os.listdir(data_path) if
@@ -74,8 +80,9 @@ for i in range(0,len(test_imgs)):
 	#original image
 	bgr_img = cv2.imread(os.path.join(data_path, filename)); bgr_img=cv2.cvtColor(bgr_img,cv2.COLOR_BGR2RGB);
 
-	#captured background image
-	bg_im=cv2.imread(os.path.join(data_path, filename.replace('_img','_back'))); bg_im=cv2.cvtColor(bg_im,cv2.COLOR_BGR2RGB);
+	if args.back is None:
+		#captured background image
+		bg_im0=cv2.imread(os.path.join(data_path, filename.replace('_img','_back'))); bg_im0=cv2.cvtColor(bg_im0,cv2.COLOR_BGR2RGB);
 
 	#segmentation mask
 	rcnn = cv2.imread(os.path.join(data_path, filename.replace('_img','_masksDL')),0);
@@ -99,6 +106,7 @@ for i in range(0,len(test_imgs)):
 			file_tmp=test_imgs[idx[t]]
 			bgr_img_mul = cv2.imread(os.path.join(data_path, file_tmp));
 			multi_fr_w[...,t]=cv2.cvtColor(bgr_img_mul,cv2.COLOR_BGR2GRAY);
+
 	else:
 		## create the multi-frame
 		multi_fr_w=np.zeros((bgr_img.shape[0],bgr_img.shape[1],4))
@@ -109,10 +117,10 @@ for i in range(0,len(test_imgs)):
 
 		
 	#crop tightly
-	bgr_img0=bgr_img; bg_im0=bg_im;
+	bgr_img0=bgr_img;
 	bbox=get_bbox(rcnn,R=bgr_img0.shape[0],C=bgr_img0.shape[1])
 
-	crop_list=[bgr_img,bg_im,rcnn,back_img10,back_img20,multi_fr_w]
+	crop_list=[bgr_img,bg_im0,rcnn,back_img10,back_img20,multi_fr_w]
 	crop_list=crop_images(crop_list,reso,bbox)
 	bgr_img=crop_list[0]; bg_im=crop_list[1]; rcnn=crop_list[2]; back_img1=crop_list[3]; back_img2=crop_list[4]; multi_fr=crop_list[5]
 
@@ -176,6 +184,7 @@ for i in range(0,len(test_imgs)):
 		fg_out0=uncrop(fg_out,bbox,R0,C0)
 
 	#compose
+	back_img10=cv2.resize(back_img10,(C0,R0)); back_img20=cv2.resize(back_img20,(C0,R0))
 	comp_im_tr1=composite4(fg_out0,back_img10,alpha_out0)
 	comp_im_tr2=composite4(fg_out0,back_img20,alpha_out0)
 

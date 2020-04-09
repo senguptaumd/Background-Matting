@@ -5,19 +5,18 @@ MAX_FEATURES = 500
 GOOD_MATCH_PERCENT = 0.15
 
 
-def alignImages(im1, im2):
+def alignImages(im1, im2,masksDL):
 
 	# Convert images to grayscale
 	im1Gray = cv2.cvtColor(im1, cv2.COLOR_BGR2GRAY)
 	im2Gray = cv2.cvtColor(im2, cv2.COLOR_BGR2GRAY)
-	
-	# Detect ORB features and compute descriptors.
-	orb = cv2.ORB_create(MAX_FEATURES)
-	keypoints1, descriptors1 = orb.detectAndCompute(im1Gray, None)
-	keypoints2, descriptors2 = orb.detectAndCompute(im2Gray, None)
+
+	akaze = cv2.AKAZE_create()
+	keypoints1, descriptors1 = akaze.detectAndCompute(im1, None)
+	keypoints2, descriptors2 = akaze.detectAndCompute(im2, None)
 	
 	# Match features.
-	matcher = cv2.DescriptorMatcher_create(cv2.DESCRIPTOR_MATCHER_BRUTEFORCE_HAMMING)
+	matcher = cv2.DescriptorMatcher_create(cv2.DESCRIPTOR_MATCHER_BRUTEFORCE)
 	matches = matcher.match(descriptors1, descriptors2, None)
 	
 	# Sort matches by score
@@ -41,8 +40,23 @@ def alignImages(im1, im2):
 	# Use homography
 	height, width, channels = im2.shape
 	im1Reg = cv2.warpPerspective(im1, h, (width, height))
-	
+	# copy image in the empty region, unless it is a foreground. Then copy background
+
+	mask_rep=(np.sum(im1Reg.astype('float32'),axis=2)==0)
+
+	im1Reg[mask_rep,0]=im2[mask_rep,0]
+	im1Reg[mask_rep,1]=im2[mask_rep,1]
+	im1Reg[mask_rep,2]=im2[mask_rep,2]
+
+	mask_rep1=np.logical_and(mask_rep , masksDL[...,0]==255)
+
+	im1Reg[mask_rep1,0]=im1[mask_rep1,0]
+	im1Reg[mask_rep1,1]=im1[mask_rep1,1]
+	im1Reg[mask_rep1,2]=im1[mask_rep1,2]
+
+
 	return im1Reg
+
 
 def adjustExposure(img,back,mask):
 	kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3))
@@ -91,7 +105,7 @@ for i in range(0,len(list_im)):
 
 	#back_new = adjustExposure(image,back,mask[...,0])
 
-	back_align = alignImages(back, image)
+	back_align = alignImages(back, image,mask)
 
 	cv2.imwrite(list_im[i].replace('img','back'),back_align)
 
