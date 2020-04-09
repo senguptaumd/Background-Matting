@@ -87,7 +87,7 @@ for i in range(0,len(test_imgs)):
 		back_img20=np.zeros(back_img10.shape); back_img20[...,0]=120; back_img20[...,1]=255; back_img20[...,2]=155;
 
 		#create multiple frames with adjoining frames
-		gap=2
+		gap=20
 		multi_fr_w=np.zeros((bgr_img.shape[0],bgr_img.shape[1],4))
 		idx=[i-2*gap,i-gap,i+gap,i+2*gap]
 		for t in range(0,4):
