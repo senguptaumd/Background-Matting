@@ -137,16 +137,18 @@ _MODEL_URLS = {
 	'xception_coco_voctrainval':
 		'deeplabv3_pascal_trainval_2018_01_04.tar.gz',
 }
-_TARBALL_NAME = 'deeplab_model.tar.gz'
+_TARBALL_NAME = _MODEL_URLS[MODEL_NAME]
 
-model_dir = tempfile.mkdtemp()
-tf.gfile.MakeDirs(model_dir)
+model_dir = 'deeplab_model'
+if not os.path.exists(model_dir):
+  tf.gfile.MakeDirs(model_dir)
 
 download_path = os.path.join(model_dir, _TARBALL_NAME)
-print('downloading model, this might take a while...')
-urllib.request.urlretrieve(_DOWNLOAD_URL_PREFIX + _MODEL_URLS[MODEL_NAME],
-				   download_path)
-print('download completed! loading DeepLab model...')
+print('downloading model to %s, this might take a while...' % download_path)
+if not os.path.exists(download_path):
+  urllib.request.urlretrieve(_DOWNLOAD_URL_PREFIX + _MODEL_URLS[MODEL_NAME], 
+			     download_path)
+  print('download completed! loading DeepLab model...')
 
 MODEL = DeepLabModel(download_path)
 print('model loaded successfully!')
