@@ -121,6 +121,7 @@ Skip this step, if your data is captured with fixed-camera.
 Run `python test_pre_process.py -i sample_data/input` for pre-processing. It aligns the background image `_back.png` and changes its bias-gain to match the input image `_img.png`
 
 We used AKAZE features python code (since SURF and SIFT unavilable in opencv3) for alignment. We also provide an alternate MATLAB code (`test_pre_process.m`), which uses SURF features. MATLAB code also provides a way to visualize feature matching and alignment. Bad alignment will produce bad matting output.
+Bias-gain adjustment is turned off in the Python code due to a bug, but it is present in MATLAB code. If there are significant exposure changes between the captured image and the captured background, use bias-gain adjustment to account for that.
 
 Feel free to write your own alignment code, choose your favorite feature detector, feature matching and alignment.
 
