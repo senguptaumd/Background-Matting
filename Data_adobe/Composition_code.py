@@ -15,54 +15,48 @@
 
 ##############################################################
 # python Composition_code.py --fg_path fg_train --mask_path mask_train --bg_path bg_train --out_path merged_train --out_csv Adobe_train_data.csv
-# python Composition_code.py --fg_path fg_train --mask_path mask_train --bg_path /media/andrey/Elements2/COCO/COCO/train2017 --out_path merged_train --out_csv Adobe_train_data.csv
+# python Composition_code.py --fg_path fg_train --mask_path mask_train --bg_path /media/andrey/Elements2/COCO/COCO/train2017 --out_path /media/andrey/Elements2/RESEARCH/adobe/merged_train --out_csv Adobe_train_data.csv --workers 6
 
-from PIL import Image, ImageChops
+from PIL import Image
 from tqdm import tqdm
 import argparse
 import os
 import math
+from multiprocessing import Pool
 
 parser = argparse.ArgumentParser(description='compose backgrounds and foregrounds')
+
 parser.add_argument('--fg_path', type=str, required=True, help='path to provided foreground images')
 parser.add_argument('--mask_path', type=str, required=True, help='path to provided alpha mattes')
 parser.add_argument('--bg_path', type=str, required=True, help='path to to background images (MSCOCO)')
 parser.add_argument('--out_path', type=str, required=True, help='path to folder where you want the composited images to go')
+
 parser.add_argument('--out_csv', type=str, default=os.devnull, help='path to csv file used by data loader')
+parser.add_argument('--num_bgs', type=int, default=100, help='number of backgrounds onto which to paste each foreground')
+parser.add_argument('--workers', type=int, help='maximum workers to use, defaults to os.cpu_count()')
 args = parser.parse_args()
 
-fg_path, a_path, bg_path, out_path = args.fg_path, args.mask_path, args.bg_path, args.out_path
+fg_path, a_path, bg_path, out_path, num_bgs = args.fg_path, args.mask_path, args.bg_path, args.out_path, args.num_bgs
 os.makedirs(out_path, exist_ok=True)
-file_id = open(args.out_csv, "w")
 
 def composite4(fg, bg, a, w, h):
     bg = bg.crop((0,0,w,h))
     bg.paste(fg, mask=a)
     return bg
 
-num_bgs = 100
-
-fg_files = os.listdir(fg_path)
-a_files = os.listdir(a_path)
-bg_files = os.listdir(bg_path)
-
-bg_iter = iter(bg_files)
-for im_name in tqdm(fg_files):
-    
-    im_name=im_name.replace(fg_path,'')
+def process_foreground_image(job):
+    i, im_name, bg_batch = job
+    im_name = im_name.replace(fg_path, '')
     im = Image.open(os.path.join(fg_path, im_name))
     al = Image.open(os.path.join(a_path, im_name))
     bbox = im.size
     w = bbox[0]
     h = bbox[1]
-    
     if im.mode != 'RGB' and im.mode != 'RGBA':
         im = im.convert('RGB')
-    
-    bcount = 0 
-    for i in tqdm(range(num_bgs), leave=False):
 
-        bg_name = next(bg_iter)        
+    output_lines = []
+    for bg_name in bg_batch:
         bg = Image.open(os.path.join(bg_path, bg_name))
         if bg.mode != 'RGB':
             bg = bg.convert('RGB')
@@ -74,25 +68,36 @@ for im_name in tqdm(fg_files):
         hratio = h / bh
         ratio = wratio if wratio > hratio else hratio
         if ratio > 1:
-            bg = bg.resize((math.ceil(bw*ratio),math.ceil(bh*ratio)), Image.BICUBIC)
+            bg = bg.resize((math.ceil(bw * ratio), math.ceil(bh * ratio)), Image.BICUBIC)
 
-        out = composite4(im, bg, al, w, h)
-        out_name = os.path.join(out_path, im_name[:len(im_name)-4] + '_' + str(bcount) + '_comp.png')
-        out.save(out_name, "PNG")
+        try:
+            out = composite4(im, bg, al, w, h)
+            out_name = os.path.join(out_path, im_name[:len(im_name) - 4] + '_' + str(i) + '_comp.png')
+            out.save(out_name, "PNG")
 
-        bbox = im.getbbox()
-        back = bg.crop((0,0,w,h))
-        back_name = os.path.join(out_path, im_name[:len(im_name)-4] + '_' + str(bcount) + '_back.png')
-        back.save(back_name, "PNG")
+            back = bg.crop((0, 0, w, h))
+            back_name = os.path.join(out_path, im_name[:len(im_name) - 4] + '_' + str(i) + '_back.png')
+            back.save(back_name, "PNG")
 
-        #write to file
-        line = 'Data_adobe/' + os.path.join(fg_path, im_name) + ';' + 'Data_adobe/' + os.path.join(a_path, im_name) + ';' + 'Data_adobe/' + out_name + ';' + 'Data_adobe/' + back_name + '\n'
-        file_id.write(line)
+            # write to file
+            line = 'Data_adobe/' + os.path.join(fg_path, im_name) + ';' + 'Data_adobe/' + os.path.join(a_path, im_name) + ';' + 'Data_adobe/' + out_name + ';' + 'Data_adobe/' + back_name + '\n'
+            output_lines.append(line)
+        except Exception as e:
+            tqdm.write(f"Composing {im_name} onto {bg_name} failed! Skipping...", e)
+    return output_lines
 
 
-        bcount += 1
+fg_files = os.listdir(fg_path)
+a_files = os.listdir(a_path)
+bg_files = os.listdir(bg_path)
+bg_batches = [bg_files[i * num_bgs:(i + 1) * num_bgs] for i in range((len(bg_files) + num_bgs - 1) // num_bgs )]
+job_feed = zip(range(len(fg_files)), fg_files, bg_batches)
 
-    print('Done: ' + im_name)
+with Pool(args.workers) as p:
+    results = list(tqdm(p.imap(process_foreground_image, job_feed, 1), total=len(fg_files)))
+tqdm.write("Done composing...")
 
-file_id.close()
-
+with open(args.out_csv, "w") as f:
+    for batch_lines in results:
+        for line in batch_lines:
+            f.write(line)
