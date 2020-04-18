@@ -17,7 +17,7 @@
 # python Composition_code.py --fg_path fg_train --mask_path mask_train --bg_path bg_train --out_path merged_train --out_csv Adobe_train_data.csv
 # python Composition_code.py --fg_path fg_train --mask_path mask_train --bg_path /media/andrey/Elements2/COCO/COCO/train2017 --out_path merged_train --out_csv Adobe_train_data.csv
 
-from PIL import Image
+from PIL import Image, ImageChops
 from tqdm import tqdm
 import argparse
 import os
@@ -39,48 +39,39 @@ file_id = open(args.out_csv, "w")
 def composite4(fg, bg, a, w, h):
 
     bg = bg.crop((0,0,w,h))
-
-    arr_bg = np.array(bg)
-    assert arr_bg.ndim == 3
-    arr_fg = np.array(fg)
-    arr_a = np.array(a)
-    if arr_a.ndim == 1:
-        arr_a = arr_a[:, :, 0]
-    arr_a = np.divide(arr_a, 255.0)[..., None]
-    arr_blend = arr_a * arr_fg + (1 - arr_a) * arr_bg
-    arr_blend = arr_blend.astype(np.uint8)
-    result = Image.fromarray(arr_blend)
+    bg_paste = bg.copy()
+    bg_paste.paste(fg, mask=a)
+    bg_paste.save("test_paste.png", "PNG")
 
 
+    fg_list = fg.load()
+    bg_list = bg.load()
+    a_list = a.load()
 
-    
-    # fg_list = fg.load()
-    # bg_list = bg.load()
-    # a_list = a.load()
-    #
-    # for y in range(h):
-    #     for x in range (w):
-    #         try:
-    #             alpha = a_list[x,y] / 255
-    #         except:
-    #             alpha=(a_list[x,y][0])/255
-    #         # t = fg_list[x,y][0]
-    #         # t2 = bg_list[x,y][0]
-    #         if alpha >= 1:
-    #             r = int(fg_list[x,y][0])
-    #             g = int(fg_list[x,y][1])
-    #             b = int(fg_list[x,y][2])
-    #             bg_list[x,y] = (r, g, b, 255)
-    #         elif alpha > 0:
-    #             r = int(alpha * fg_list[x,y][0] + (1-alpha) * bg_list[x,y][0])
-    #             g = int(alpha * fg_list[x,y][1] + (1-alpha) * bg_list[x,y][1])
-    #             b = int(alpha * fg_list[x,y][2] + (1-alpha) * bg_list[x,y][2])
-    #             bg_list[x,y] = (r, g, b, 255)
-    # assert np.array_equal(np.array(result), np.array(bg))
-    # print("Assert passed.")
+    for y in range(h):
+        for x in range (w):
+            try:
+                alpha = a_list[x,y] / 255
+            except:
+                alpha=(a_list[x,y][0])/255
+            # t = fg_list[x,y][0]
+            # t2 = bg_list[x,y][0]
+            if alpha >= 1:
+                r = int(fg_list[x,y][0])
+                g = int(fg_list[x,y][1])
+                b = int(fg_list[x,y][2])
+                bg_list[x,y] = (r, g, b, 255)
+            elif alpha > 0:
+                r = int(alpha * fg_list[x,y][0] + (1-alpha) * bg_list[x,y][0])
+                g = int(alpha * fg_list[x,y][1] + (1-alpha) * bg_list[x,y][1])
+                b = int(alpha * fg_list[x,y][2] + (1-alpha) * bg_list[x,y][2])
+                bg_list[x,y] = (r, g, b, 255)
+    error = np.abs(np.array(bg, dtype=float) - np.array(bg_paste, dtype=float))
+    assert np.max(error) <= 1
+    print("Assert passed.")
 
     # return bg
-    return result
+    return bg_paste
 
 num_bgs = 100
 
