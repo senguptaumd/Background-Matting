@@ -22,7 +22,6 @@ from tqdm import tqdm
 import argparse
 import os
 import math
-import numpy as np
 
 parser = argparse.ArgumentParser(description='compose backgrounds and foregrounds')
 parser.add_argument('--fg_path', type=str, required=True, help='path to provided foreground images')
@@ -37,41 +36,9 @@ os.makedirs(out_path, exist_ok=True)
 file_id = open(args.out_csv, "w")
 
 def composite4(fg, bg, a, w, h):
-
     bg = bg.crop((0,0,w,h))
-    bg_paste = bg.copy()
-    bg_paste.paste(fg, mask=a)
-    bg_paste.save("test_paste.png", "PNG")
-
-
-    fg_list = fg.load()
-    bg_list = bg.load()
-    a_list = a.load()
-
-    for y in range(h):
-        for x in range (w):
-            try:
-                alpha = a_list[x,y] / 255
-            except:
-                alpha=(a_list[x,y][0])/255
-            # t = fg_list[x,y][0]
-            # t2 = bg_list[x,y][0]
-            if alpha >= 1:
-                r = int(fg_list[x,y][0])
-                g = int(fg_list[x,y][1])
-                b = int(fg_list[x,y][2])
-                bg_list[x,y] = (r, g, b, 255)
-            elif alpha > 0:
-                r = int(alpha * fg_list[x,y][0] + (1-alpha) * bg_list[x,y][0])
-                g = int(alpha * fg_list[x,y][1] + (1-alpha) * bg_list[x,y][1])
-                b = int(alpha * fg_list[x,y][2] + (1-alpha) * bg_list[x,y][2])
-                bg_list[x,y] = (r, g, b, 255)
-    error = np.abs(np.array(bg, dtype=float) - np.array(bg_paste, dtype=float))
-    assert np.max(error) <= 1
-    print("Assert passed.")
-
-    # return bg
-    return bg_paste
+    bg.paste(fg, mask=a)
+    return bg
 
 num_bgs = 100
 
@@ -105,8 +72,8 @@ for im_name in tqdm(fg_files):
         bh = bg_bbox[1]
         wratio = w / bw
         hratio = h / bh
-        ratio = wratio if wratio > hratio else hratio     
-        if ratio > 1:        
+        ratio = wratio if wratio > hratio else hratio
+        if ratio > 1:
             bg = bg.resize((math.ceil(bw*ratio),math.ceil(bh*ratio)), Image.BICUBIC)
 
         out = composite4(im, bg, al, w, h)
