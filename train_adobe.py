@@ -52,11 +52,14 @@ data_config_train = {'reso': [args.reso,args.reso], 'trimapK': [5,5], 'noise': T
 # DATA LOADING
 print('\n[Phase 1] : Data Preparation')
 
+def collate_filter_none(batch):
+	batch = list(filter(lambda x: x is not None, batch))
+	return torch.utils.data.dataloader.default_collate(batch)
 
 #Original Data
 traindata =  AdobeDataAffineHR(csv_file='Data_adobe/Adobe_train_data.csv',data_config=data_config_train,transform=None)  #Write a dataloader function that can read the database provided by .csv file
 
-train_loader = torch.utils.data.DataLoader(traindata, batch_size=args.batch_size, shuffle=True, num_workers=args.batch_size)
+train_loader = torch.utils.data.DataLoader(traindata, batch_size=args.batch_size, shuffle=True, num_workers=args.batch_size, collate_fn=collate_filter_none)
 
 
 print('\n[Phase 2] : Initialization')
@@ -142,15 +145,15 @@ for epoch in range(0,args.epoch):
 
 		t1=time.time()
 
-		elapse +=t1 -t0
-		elapse_run += t1-tr0
+		elapse += t1 - t0
+		elapse_run += t1 - tr0
 		t0=t1
 
 		testL+=loss.data
 		ct_tst+=1
 
 		if i % step == (step-1):
-			print('[%d, %5d] Total-loss:  %.4f Alpha-loss: %.4f Fg-loss: %.4f Comp-loss: %.4f Alpha-gradient-loss: %.4f Time-all: %.4f Time-fwbw: %.4f' %(epoch + 1, i + 1, netL/step,alL/step,fgL/step,afg_cL/step,al_fg_cL/step,elapse/step,elapse_run/step))
+			print('[%d, %5d] Total-loss:  %.4f Alpha-loss: %.4f Fg-loss: %.4f Comp-loss: %.4f Alpha-gradient-loss: %.4f Time-all: %.4f Time-fwbw: %.4f' % (epoch + 1, i + 1, netL/step, alL/step, fgL/step, fg_cL/step, al_fg_cL/step, elapse/step, elapse_run/step))
 			netL, alL, fgL, fg_cL, al_fg_cL, elapse_run, elapse=0,0,0,0,0,0,0
 
 			write_tb_log(image,'image',log_writer,i)

@@ -77,78 +77,82 @@ class AdobeDataAffineHR(Dataset):
 		return len(self.frames)
 
 	def __getitem__(self,idx):
-		#load
-		fg = io.imread(self.frames.iloc[idx, 0])
-		alpha = io.imread(self.frames.iloc[idx, 1])
-		image = io.imread(self.frames.iloc[idx, 2])
-		back = io.imread(self.frames.iloc[idx, 3])
-		
-		fg = cv2.resize(fg, dsize=(800,800))
-		alpha = cv2.resize(alpha, dsize=(800,800))
-		back = cv2.resize(back, dsize=(800,800))
-		image = cv2.resize(image, dsize=(800,800))
-		
+		try:
+			#load
+			fg = io.imread(self.frames.iloc[idx, 0])
+			alpha = io.imread(self.frames.iloc[idx, 1])
+			image = io.imread(self.frames.iloc[idx, 2])
+			back = io.imread(self.frames.iloc[idx, 3])
 
-		sz=self.resolution
-
-		#random flip
-		if np.random.random_sample() > 0.5:
-			alpha = cv2.flip(alpha,1)
-			fg = cv2.flip(fg,1)
-			back = cv2.flip(back,1)
-			image = cv2.flip(image,1)
-			
-		trimap=generate_trimap(alpha,self.trimapK[0],self.trimapK[1],False)
+			fg = cv2.resize(fg, dsize=(800,800))
+			alpha = cv2.resize(alpha, dsize=(800,800))
+			back = cv2.resize(back, dsize=(800,800))
+			image = cv2.resize(image, dsize=(800,800))
 
 
-		#randcom crop+scale
-		different_sizes = [(576,576),(608,608),(640,640),(672,672),(704,704),(736,736),(768,768),(800,800)]
-		crop_size = random.choice(different_sizes)
+			sz=self.resolution
 
-		x, y = random_choice(trimap, crop_size)
+			#random flip
+			if np.random.random_sample() > 0.5:
+				alpha = cv2.flip(alpha,1)
+				fg = cv2.flip(fg,1)
+				back = cv2.flip(back,1)
+				image = cv2.flip(image,1)
 
-		fg = safe_crop(fg, x, y, crop_size,sz)
-		alpha = safe_crop(alpha, x, y, crop_size,sz)
-		image = safe_crop(image, x, y, crop_size,sz)
-		back = safe_crop(back, x, y, crop_size,sz)
-		trimap = safe_crop(trimap, x, y, crop_size,sz)
+			trimap=generate_trimap(alpha,self.trimapK[0],self.trimapK[1],False)
 
-		#Perturb Background: random noise addition or gamma change
-		if self.noise:
-			if np.random.random_sample() > 0.6:
+
+			#randcom crop+scale
+			different_sizes = [(576,576),(608,608),(640,640),(672,672),(704,704),(736,736),(768,768),(800,800)]
+			crop_size = random.choice(different_sizes)
+
+			x, y = random_choice(trimap, crop_size)
+
+			fg = safe_crop(fg, x, y, crop_size,sz)
+			alpha = safe_crop(alpha, x, y, crop_size,sz)
+			image = safe_crop(image, x, y, crop_size,sz)
+			back = safe_crop(back, x, y, crop_size,sz)
+			trimap = safe_crop(trimap, x, y, crop_size,sz)
+
+			#Perturb Background: random noise addition or gamma change
+			if self.noise:
+				if np.random.random_sample() > 0.6:
+					sigma=np.random.randint(low=2, high=6)
+					mu=np.random.randint(low=0, high=14)-7
+					back_tr=add_noise(back,mu,sigma)
+				else:
+					back_tr=skimage.exposure.adjust_gamma(back,np.random.normal(1,0.12))
+
+
+			#Create motion cues: transform foreground and create 4 additional images
+			affine_fr=np.zeros((fg.shape[0],fg.shape[1],4))
+			for t in range(0,4):
+				T=np.random.normal(0,5,(2,1)); theta=np.random.normal(0,7);
+				R=np.array([[np.cos(np.deg2rad(theta)), -np.sin(np.deg2rad(theta))],[np.sin(np.deg2rad(theta)), np.cos(np.deg2rad(theta))]])
+				sc=np.array([[1+np.random.normal(0,0.05), 0],[0,1]]); sh=np.array([[1, np.random.normal(0,0.05)*(np.random.random_sample() > 0.5)],[np.random.normal(0,0.05)*(np.random.random_sample() > 0.5), 1]]);
+				A=np.concatenate((sc*sh*R, T), axis=1);
+
+				fg_tr = cv2.warpAffine(fg.astype(np.uint8),A,(fg.shape[1],fg.shape[0]),flags=cv2.INTER_LINEAR,borderMode=cv2.BORDER_REFLECT)
+				alpha_tr = cv2.warpAffine(alpha.astype(np.uint8),A,(fg.shape[1],fg.shape[0]),flags=cv2.INTER_NEAREST,borderMode=cv2.BORDER_REFLECT)
+
 				sigma=np.random.randint(low=2, high=6)
 				mu=np.random.randint(low=0, high=14)-7
-				back_tr=add_noise(back,mu,sigma)
-			else:
-				back_tr=skimage.exposure.adjust_gamma(back,np.random.normal(1,0.12))
+				back_tr0=add_noise(back,mu,sigma)
 
-
-		#Create motion cues: transform foreground and create 4 additional images 
-		affine_fr=np.zeros((fg.shape[0],fg.shape[1],4))
-		for t in range(0,4):
-			T=np.random.normal(0,5,(2,1)); theta=np.random.normal(0,7);
-			R=np.array([[np.cos(np.deg2rad(theta)), -np.sin(np.deg2rad(theta))],[np.sin(np.deg2rad(theta)), np.cos(np.deg2rad(theta))]])
-			sc=np.array([[1+np.random.normal(0,0.05), 0],[0,1]]); sh=np.array([[1, np.random.normal(0,0.05)*(np.random.random_sample() > 0.5)],[np.random.normal(0,0.05)*(np.random.random_sample() > 0.5), 1]]);
-			A=np.concatenate((sc*sh*R, T), axis=1);
-
-			fg_tr = cv2.warpAffine(fg.astype(np.uint8),A,(fg.shape[1],fg.shape[0]),flags=cv2.INTER_LINEAR,borderMode=cv2.BORDER_REFLECT)
-			alpha_tr = cv2.warpAffine(alpha.astype(np.uint8),A,(fg.shape[1],fg.shape[0]),flags=cv2.INTER_NEAREST,borderMode=cv2.BORDER_REFLECT)
-
-			sigma=np.random.randint(low=2, high=6)
-			mu=np.random.randint(low=0, high=14)-7
-			back_tr0=add_noise(back,mu,sigma)
-
-			affine_fr[...,t]=cv2.cvtColor(composite(fg_tr,back_tr0,alpha_tr), cv2.COLOR_BGR2GRAY)
+				affine_fr[...,t]=cv2.cvtColor(composite(fg_tr,back_tr0,alpha_tr), cv2.COLOR_BGR2GRAY)
 
 
 
-		sample = {'image': to_tensor(image), 'fg': to_tensor(fg), 'alpha': to_tensor(alpha), 'bg': to_tensor(back), 'trimap': to_tensor(trimap), 'bg_tr': to_tensor(back_tr), 'seg': to_tensor(create_seg(alpha,trimap)), 'multi_fr': to_tensor(affine_fr)}
+			sample = {'image': to_tensor(image), 'fg': to_tensor(fg), 'alpha': to_tensor(alpha), 'bg': to_tensor(back), 'trimap': to_tensor(trimap), 'bg_tr': to_tensor(back_tr), 'seg': to_tensor(create_seg(alpha,trimap)), 'multi_fr': to_tensor(affine_fr)}
 
 
 
-		if self.transform:
-			sample = self.transform(sample)
-		return sample
+			if self.transform:
+				sample = self.transform(sample)
+			return sample
+		except Exception as e:
+			print("Error loading: " + self.frames.iloc[idx, 0])
+			print(e)
 
 
 #Functions
@@ -174,6 +178,33 @@ def create_seg_guide(rcnn,reso):
 	rcnn=np.delete(rcnn, range(reso[0],reso[0]+K), 0)
 
 	return rcnn
+
+def crop_holes(img,cx,cy,crop_size):
+	img[cy:cy+crop_size[0],cx:cx+crop_size[1]]=0
+	return img
+
+def create_seg(alpha,trimap):
+	#old
+	num_holes=np.random.randint(low=0, high=3)
+	crop_size_list=[(15,15),(25,25),(35,35),(45,45)]
+	kernel_er = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 5))
+	kernel_dil = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 5))
+	seg = (alpha>0.5).astype(np.float32)
+	#print('Before %.4f max: %.4f' %(seg.sum(),seg.max()))
+	#old
+	seg = cv2.erode(seg, kernel_er, iterations=np.random.randint(low=10,high=20))
+	seg = cv2.dilate(seg, kernel_dil, iterations=np.random.randint(low=15,high=30))
+	#print('After %.4f max: %.4f' %(seg.sum(),seg.max()))
+	seg=seg.astype(np.float32)
+	seg=(255*seg).astype(np.uint8)
+	for i in range(num_holes):
+		crop_size=random.choice(crop_size_list)
+		cx,cy = random_choice(trimap,crop_size)
+		seg=crop_holes(seg,cx,cy,crop_size)
+		trimap=crop_holes(trimap,cx,cy,crop_size)
+	k_size_list=[(21,21),(31,31),(41,41)]
+	seg=cv2.GaussianBlur(seg.astype(np.float32),random.choice(k_size_list),0)
+	return seg.astype(np.uint8)
 
 
 def apply_crop(img,bbox,reso):
