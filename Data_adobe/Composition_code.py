@@ -22,6 +22,7 @@ from tqdm import tqdm
 import argparse
 import os
 import math
+import numpy as np
 
 parser = argparse.ArgumentParser(description='compose backgrounds and foregrounds')
 parser.add_argument('--fg_path', type=str, required=True, help='path to provided foreground images')
@@ -36,34 +37,50 @@ os.makedirs(out_path, exist_ok=True)
 file_id = open(args.out_csv, "w")
 
 def composite4(fg, bg, a, w, h):
-    
-    # bbox = fg.getbbox()
-    bg = bg.crop((0,0,w,h))
-    
-    fg_list = fg.load()
-    bg_list = bg.load()
-    a_list = a.load()
-    
-    for y in range(h):
-        for x in range (w):
-            try:
-                alpha = a_list[x,y] / 255
-            except:
-                alpha=(a_list[x,y][0])/255
-            # t = fg_list[x,y][0]
-            # t2 = bg_list[x,y][0]
-            if alpha >= 1:
-                r = int(fg_list[x,y][0])
-                g = int(fg_list[x,y][1])
-                b = int(fg_list[x,y][2])
-                bg_list[x,y] = (r, g, b, 255)
-            elif alpha > 0:
-                r = int(alpha * fg_list[x,y][0] + (1-alpha) * bg_list[x,y][0])
-                g = int(alpha * fg_list[x,y][1] + (1-alpha) * bg_list[x,y][1])
-                b = int(alpha * fg_list[x,y][2] + (1-alpha) * bg_list[x,y][2])
-                bg_list[x,y] = (r, g, b, 255)
 
-    return bg
+    bg = bg.crop((0,0,w,h))
+
+    arr_bg = np.array(bg)
+    assert arr_bg.ndim == 3
+    arr_fg = np.array(fg)
+    arr_a = np.array(a)
+    if arr_a.ndim == 1:
+        arr_a = arr_a[:, :, 0]
+    arr_a = np.divide(arr_a, 255.0)[..., None]
+    arr_blend = arr_a * arr_fg + (1 - arr_a) * arr_bg
+    arr_blend = arr_blend.astype(np.uint8)
+    result = Image.fromarray(arr_blend)
+
+
+
+    
+    # fg_list = fg.load()
+    # bg_list = bg.load()
+    # a_list = a.load()
+    #
+    # for y in range(h):
+    #     for x in range (w):
+    #         try:
+    #             alpha = a_list[x,y] / 255
+    #         except:
+    #             alpha=(a_list[x,y][0])/255
+    #         # t = fg_list[x,y][0]
+    #         # t2 = bg_list[x,y][0]
+    #         if alpha >= 1:
+    #             r = int(fg_list[x,y][0])
+    #             g = int(fg_list[x,y][1])
+    #             b = int(fg_list[x,y][2])
+    #             bg_list[x,y] = (r, g, b, 255)
+    #         elif alpha > 0:
+    #             r = int(alpha * fg_list[x,y][0] + (1-alpha) * bg_list[x,y][0])
+    #             g = int(alpha * fg_list[x,y][1] + (1-alpha) * bg_list[x,y][1])
+    #             b = int(alpha * fg_list[x,y][2] + (1-alpha) * bg_list[x,y][2])
+    #             bg_list[x,y] = (r, g, b, 255)
+    # assert np.array_equal(np.array(result), np.array(bg))
+    # print("Assert passed.")
+
+    # return bg
+    return result
 
 num_bgs = 100
 
@@ -72,7 +89,6 @@ a_files = os.listdir(a_path)
 bg_files = os.listdir(bg_path)
 
 bg_iter = iter(bg_files)
-fail_list = []
 for im_name in tqdm(fg_files):
     
     im_name=im_name.replace(fg_path,'')
@@ -102,27 +118,23 @@ for im_name in tqdm(fg_files):
         if ratio > 1:        
             bg = bg.resize((math.ceil(bw*ratio),math.ceil(bh*ratio)), Image.BICUBIC)
 
-        try:
-            out = composite4(im, bg, al, w, h)
-            out_name = os.path.join(out_path, im_name[:len(im_name)-4] + '_' + str(bcount) + '_comp.png')
-            out.save(out_name, "PNG")
+        out = composite4(im, bg, al, w, h)
+        out_name = os.path.join(out_path, im_name[:len(im_name)-4] + '_' + str(bcount) + '_comp.png')
+        out.save(out_name, "PNG")
 
-            bbox = im.getbbox()
-            back = bg.crop((0,0,w,h)) 
-            back_name = os.path.join(out_path, im_name[:len(im_name)-4] + '_' + str(bcount) + '_back.png')
-            back.save(back_name, "PNG")
+        bbox = im.getbbox()
+        back = bg.crop((0,0,w,h))
+        back_name = os.path.join(out_path, im_name[:len(im_name)-4] + '_' + str(bcount) + '_back.png')
+        back.save(back_name, "PNG")
 
-            #write to file
-            line = 'Data_adobe/' + os.path.join(fg_path, im_name) + ';' + 'Data_adobe/' + os.path.join(a_path, im_name) + ';' + 'Data_adobe/' + out_name + ';' + 'Data_adobe/' + back_name + '\n'
-            file_id.write(line)
+        #write to file
+        line = 'Data_adobe/' + os.path.join(fg_path, im_name) + ';' + 'Data_adobe/' + os.path.join(a_path, im_name) + ';' + 'Data_adobe/' + out_name + ';' + 'Data_adobe/' + back_name + '\n'
+        file_id.write(line)
 
-        except:
-            fail_list.append(im_name)
 
         bcount += 1
 
     print('Done: ' + im_name)
 
 file_id.close()
-print("failed on: ", fail_list)
 
