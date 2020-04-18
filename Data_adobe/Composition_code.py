@@ -14,33 +14,30 @@
 
 
 ##############################################################
-#Set your paths here
-
-#path to provided foreground images
-fg_path = 'fg_train/'
-
-#path to provided alpha mattes
-a_path = 'mask_train/'
-
-#Path to background images (MSCOCO)
-bg_path = 'bg_train/'
-
-#Path to folder where you want the composited images to go
-out_path = 'merged_train/'
-
-#csv file path
-file_id= open("Adobe_train_data.csv","wb")
-
-##############################################################
+# python Composition_code.py --fg_path fg_train --mask_path mask_train --bg_path bg_train --out_path merged_train --out_csv Adobe_train_data.csv
+# python Composition_code.py --fg_path fg_train --mask_path mask_train --bg_path /media/andrey/Elements2/COCO/COCO/train2017 --out_path merged_train --out_csv Adobe_train_data.csv
 
 from PIL import Image
-import os, glob
-import math,random
-import time, pdb
+from tqdm import tqdm
+import argparse
+import os
+import math
+
+parser = argparse.ArgumentParser(description='compose backgrounds and foregrounds')
+parser.add_argument('--fg_path', type=str, required=True, help='path to provided foreground images')
+parser.add_argument('--mask_path', type=str, required=True, help='path to provided alpha mattes')
+parser.add_argument('--bg_path', type=str, required=True, help='path to to background images (MSCOCO)')
+parser.add_argument('--out_path', type=str, required=True, help='path to folder where you want the composited images to go')
+parser.add_argument('--out_csv', type=str, default=os.devnull, help='path to csv file used by data loader')
+args = parser.parse_args()
+
+fg_path, a_path, bg_path, out_path = args.fg_path, args.mask_path, args.bg_path, args.out_path
+os.makedirs(out_path, exist_ok=True)
+file_id = open(args.out_csv, "w")
 
 def composite4(fg, bg, a, w, h):
     
-    bbox = fg.getbbox()
+    # bbox = fg.getbbox()
     bg = bg.crop((0,0,w,h))
     
     fg_list = fg.load()
@@ -53,8 +50,8 @@ def composite4(fg, bg, a, w, h):
                 alpha = a_list[x,y] / 255
             except:
                 alpha=(a_list[x,y][0])/255
-            t = fg_list[x,y][0]
-            t2 = bg_list[x,y][0]
+            # t = fg_list[x,y][0]
+            # t2 = bg_list[x,y][0]
             if alpha >= 1:
                 r = int(fg_list[x,y][0])
                 g = int(fg_list[x,y][1])
@@ -70,17 +67,17 @@ def composite4(fg, bg, a, w, h):
 
 num_bgs = 100
 
-fg_files = glob.glob(fg_path)
+fg_files = os.listdir(fg_path)
 a_files = os.listdir(a_path)
 bg_files = os.listdir(bg_path)
 
 bg_iter = iter(bg_files)
-fail_list=[];
-for im_name in fg_files:
+fail_list = []
+for im_name in tqdm(fg_files):
     
     im_name=im_name.replace(fg_path,'')
-    im = Image.open(fg_path + im_name);
-    al = Image.open(a_path + im_name);
+    im = Image.open(os.path.join(fg_path, im_name))
+    al = Image.open(os.path.join(a_path, im_name))
     bbox = im.size
     w = bbox[0]
     h = bbox[1]
@@ -89,10 +86,10 @@ for im_name in fg_files:
         im = im.convert('RGB')
     
     bcount = 0 
-    for i in range(num_bgs):
+    for i in tqdm(range(num_bgs), leave=False):
 
         bg_name = next(bg_iter)        
-        bg = Image.open(bg_path + bg_name)
+        bg = Image.open(os.path.join(bg_path, bg_name))
         if bg.mode != 'RGB':
             bg = bg.convert('RGB')
 
@@ -107,28 +104,25 @@ for im_name in fg_files:
 
         try:
             out = composite4(im, bg, al, w, h)
-            out_name=out_path + im_name[:len(im_name)-4] + '_' + str(bcount) + '_comp.png'
+            out_name = os.path.join(out_path, im_name[:len(im_name)-4] + '_' + str(bcount) + '_comp.png')
             out.save(out_name, "PNG")
 
             bbox = im.getbbox()
             back = bg.crop((0,0,w,h)) 
-            back_name= out_path + im_name[:len(im_name)-4] + '_' + str(bcount) + '_back.png'
+            back_name = os.path.join(out_path, im_name[:len(im_name)-4] + '_' + str(bcount) + '_back.png')
             back.save(back_name, "PNG")
 
             #write to file
-            line='Data_adobe/' + fg_path + im_name + ';' + 'Data_adobe/' + a_path + im_name + ';' + 'Data_adobe/' + out_name + ';' + 'Data_adobe/' + back_name + '\n'
+            line = 'Data_adobe/' + os.path.join(fg_path, im_name) + ';' + 'Data_adobe/' + os.path.join(a_path, im_name) + ';' + 'Data_adobe/' + out_name + ';' + 'Data_adobe/' + back_name + '\n'
             file_id.write(line)
 
         except:
             fail_list.append(im_name)
 
-
-         
-
-       
         bcount += 1
 
     print('Done: ' + im_name)
 
 file_id.close()
+print("failed on: ", fail_list)
 
