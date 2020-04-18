@@ -46,6 +46,9 @@ def format_pbar_str(i, im_name):
     pretty_name = pbar_prefix + ("..." + im_name[-(width - 3):] if len(im_name) > width else im_name)
     return pretty_name.rjust(33)
 
+def fixpath(path):
+    return 'Data_adobe/' + path if not os.path.isabs(path) else path
+
 def composite4(fg, bg, a, w, h):
     bg = bg.crop((0,0,w,h))
     bg.paste(fg, mask=a)
@@ -93,7 +96,7 @@ def process_foreground_image(i, job):
             back_name = os.path.join(out_path, im_name[:len(im_name) - 4] + '_' + str(back_idx) + '_back.png')
             back.save(back_name, "PNG")
 
-            line = 'Data_adobe/' + os.path.join(fg_path, im_name) + ';' + 'Data_adobe/' + os.path.join(a_path, im_name) + ';' + 'Data_adobe/' + out_name + ';' + 'Data_adobe/' + back_name + '\n'
+            line = os.path.join(fixpath(fg_path), im_name) + ';' + os.path.join(fixpath(a_path), im_name) + ';' + fixpath(out_name) + ';' + fixpath(back_name) + '\n'
             output_lines.append(line)
         except Exception as e:
             logging.error(f"Composing {im_name} onto {bg_name} failed! Skipping. Error: %s" % e)
