@@ -1,7 +1,6 @@
 from __future__ import print_function
 
 import torch
-import torchvision
 from torch.autograd import Variable
 import torch.nn as nn
 import torch.optim as optim
@@ -11,10 +10,6 @@ from tensorboardX import SummaryWriter
 import os
 import time
 import argparse
-import matplotlib.pyplot as plt
-import numpy as np
-import cv2
-import pdb
 
 from data_loader import AdobeDataAffineHR
 from functions import *
@@ -34,7 +29,7 @@ parser.add_argument('-n', '--name', type=str, help='Name of tensorboard and mode
 parser.add_argument('-bs', '--batch_size', type=int, help='Batch Size.')
 parser.add_argument('-res', '--reso', type=int, help='Input image resolution')
 
-arser.add_argument('-epoch', '--epoch', type=int, default=60,help='Maximum Epoch')
+parser.add_argument('-epoch', '--epoch', type=int, default=60,help='Maximum Epoch')
 parser.add_argument('-n_blocks1', '--n_blocks1', type=int, default=7,help='Number of residual blocks after Context Switching.')
 parser.add_argument('-n_blocks2', '--n_blocks2', type=int, default=3,help='Number of residual blocks for Fg and alpha each.')
 
@@ -66,12 +61,12 @@ train_loader = torch.utils.data.DataLoader(traindata, batch_size=args.batch_size
 
 print('\n[Phase 2] : Initialization')
 
-net=ResnetConditionHR(input_nc=(3,3,1,4),output_nc=4,args.n_blocks1=7,args.n_blocks2=3,norm_layer=nn.BatchNorm2d)
+net=ResnetConditionHR(input_nc=(3,3,1,4), output_nc=4, n_blocks1=7, n_blocks2=3, norm_layer=nn.BatchNorm2d)
 net.apply(conv_init)
 net=nn.DataParallel(net)
 #net.load_state_dict(torch.load(model_dir + 'net_epoch_X')) #uncomment this if you are initializing your model
 net.cuda()
-cudnn.benchmark=True
+torch.backends.cudnn.benchmark=True
 
 #Loss
 l1_loss=alpha_loss()
