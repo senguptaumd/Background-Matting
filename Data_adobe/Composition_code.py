@@ -22,7 +22,8 @@ from tqdm import tqdm
 import argparse
 import os
 import math
-from multiprocessing import Pool
+from multiprocessing.pool import ThreadPool
+import threading
 
 parser = argparse.ArgumentParser(description='compose backgrounds and foregrounds')
 
@@ -44,8 +45,10 @@ def composite4(fg, bg, a, w, h):
     bg.paste(fg, mask=a)
     return bg
 
-def process_foreground_image(job):
-    i, im_name, bg_batch = job
+def process_foreground_image(i, job):
+    worker_thread_id = int(threading.current_thread().name.rpartition("-")[-1])
+    im_name, bg_batch = job
+
     im_name = im_name.replace(fg_path, '')
     im = Image.open(os.path.join(fg_path, im_name))
     al = Image.open(os.path.join(a_path, im_name))
@@ -56,7 +59,10 @@ def process_foreground_image(job):
         im = im.convert('RGB')
 
     output_lines = []
-    for bg_name in bg_batch:
+    pretty_name = ("..." + im_name[-27:] if len(im_name) > 30 else im_name).rjust(30)
+    with lock:
+        pbar = tqdm(bg_batch, position=worker_thread_id, desc=f"({i}) {pretty_name}", leave=False)
+    for b, bg_name in enumerate(pbar):
         bg = Image.open(os.path.join(bg_path, bg_name))
         if bg.mode != 'RGB':
             bg = bg.convert('RGB')
@@ -72,32 +78,49 @@ def process_foreground_image(job):
 
         try:
             out = composite4(im, bg, al, w, h)
-            out_name = os.path.join(out_path, im_name[:len(im_name) - 4] + '_' + str(i) + '_comp.png')
+            back_idx = i * num_bgs + b
+            out_name = os.path.join(out_path, im_name[:len(im_name) - 4] + '_' + str(back_idx) + '_comp.png')
             out.save(out_name, "PNG")
 
             back = bg.crop((0, 0, w, h))
-            back_name = os.path.join(out_path, im_name[:len(im_name) - 4] + '_' + str(i) + '_back.png')
+            back_name = os.path.join(out_path, im_name[:len(im_name) - 4] + '_' + str(back_idx) + '_back.png')
             back.save(back_name, "PNG")
 
-            # write to file
             line = 'Data_adobe/' + os.path.join(fg_path, im_name) + ';' + 'Data_adobe/' + os.path.join(a_path, im_name) + ';' + 'Data_adobe/' + out_name + ';' + 'Data_adobe/' + back_name + '\n'
             output_lines.append(line)
         except Exception as e:
             tqdm.write(f"Composing {im_name} onto {bg_name} failed! Skipping...", e)
+        with lock:
+            pbar.update()
+    with lock:
+        pbar.close()
     return output_lines
 
 
-fg_files = os.listdir(fg_path)
+fg_files = os.listdir(fg_path)[:20]
 a_files = os.listdir(a_path)
 bg_files = os.listdir(bg_path)
 bg_batches = [bg_files[i * num_bgs:(i + 1) * num_bgs] for i in range((len(bg_files) + num_bgs - 1) // num_bgs )]
-job_feed = zip(range(len(fg_files)), fg_files, bg_batches)
 
-with Pool(args.workers) as p:
-    results = list(tqdm(p.imap(process_foreground_image, job_feed, 1), total=len(fg_files)))
+
+lock = threading.Lock()
+pool = ThreadPool(args.workers)
+with lock:
+    total_pbar = tqdm(total=len(fg_files), position=args.workers+1, desc="TOTAL", leave=False, smoothing=0.0)
+def update_total_pbar(_):
+    with lock:
+        total_pbar.update(1)
+jobs = []
+for jobargs in enumerate(zip(fg_files, bg_batches)):
+    jobs.append(pool.apply_async(process_foreground_image, args=jobargs, callback=update_total_pbar))
+pool.close()
+pool.join()
+
+output = []
+for result in jobs:
+    output.extend(result.get())
 tqdm.write("Done composing...")
 
 with open(args.out_csv, "w") as f:
-    for batch_lines in results:
-        for line in batch_lines:
-            f.write(line)
+    for line in output:
+        f.write(line)
