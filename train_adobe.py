@@ -145,8 +145,9 @@ for epoch in range(0,args.epoch):
 
 		t1=time.time()
 
-		elapse += t1 - t0
-		elapse_run += t1 - tr0
+		elapse +=t1 -t0
+		elapse_run += t1-tr0
+
 		t0=t1
 
 		testL+=loss.data

@@ -14,7 +14,7 @@
 
 
 ##############################################################
-# python Composition_code.py --fg_path fg_train --mask_path mask_train --bg_path bg_train --out_path merged_train --out_csv Adobe_train_data.csv
+# python compose.py --fg_path fg_train --mask_path mask_train --bg_path bg_train --out_path merged_train --out_csv Adobe_train_data.csv --workers 8
 
 from PIL import Image
 from tqdm import tqdm
