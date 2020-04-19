@@ -3,10 +3,17 @@
 ### Data ###
 
 - Download original Adobe matting dataset: [Follow instructions.](https://sites.google.com/view/deepimagematting)
-- Separate human images: Use `test_data_list.txt` and `train_data_list.txt` in `Data_adobe` to copy only human subjects from Adobe dataset. Create folders `fg_train`, `fg_test`, `mask_train`, `mask_test` to copy foreground and alpha matte for test and train data separately. (The train test split is same as the original dataset.)
+- Separate human images: Use `test_data_list.txt` and `train_data_list.txt` in `Data_adobe` to copy only human subjects from Adobe dataset. Create folders `fg_train`, `fg_test`, `mask_train`, `mask_test` to copy foreground and alpha matte for test and train data separately. (The train test split is same as the original dataset.) You can run the following to accomplish this:
+```bash
+cd Data_adobe
+./prepare.sh /path/to/adobe/Combined_Dataset
+```
 - Download background images: Download MS-COCO images and place it in [`bg_train`](http://images.cocodataset.org/zips/test2017.zip) and in [`bg_test`](http://images.cocodataset.org/zips/val2017.zip).
-- Run `python Composition_code.py` to save the composed image (`_comp`) and the background image (`_back`) in `merged_train` and `merged_test` folder.
-- The above code will also create `Adobe_train_data.csv` for training. This will will be used in dataloader. [TODO: Test once to make sure]
+- Compose Adobe foregrounds onto COCO for the train and test sets. This saves the composed result as `_comp` and the background as `_back` under `merged_train` and `merged_test`. It will also create a CSV to be used by the training dataloader. You can pass `--workers 8` to use e.g. 8 threads, though it will use only one by default.
+```bash
+python compose.py --fg_path fg_train --mask_path mask_train --bg_path bg_train --out_path merged_train --out_csv Adobe_train_data.csv
+python compose.py --fg_path fg_test --mask_path mask_test --bg_path bg_test --out_path merged_test
+```
 
 
 ### Training ###
