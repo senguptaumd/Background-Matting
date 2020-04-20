@@ -235,8 +235,6 @@ Thanks to Andrey Ryabstev for creating Google Colab version for easy inference o
 
 [Google Colab](https://gist.github.com/andreyryabtsev/243aa3eefa6e06891dda7b1583d1d08f)
 
-**Coming soon ...**
-
 ## Notes
 
 We are eager to hear how our algorithm works on your images/videos. If the algorithm fails on your data, please feel free to share it with us at soumya91@cs.washington.edu. This will help us in improving our algorithm for future research. Also, feel free to share any cool results.
