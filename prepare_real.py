@@ -5,8 +5,8 @@
 
 #$image;$captured_back;$segmentation;$image+20frames;$image+2*20frames;$image+3*20frames;$image+4*20frames;$target_back
 
-path = "/media/andrey/Elements2/RESEARCH/Captured_Data/fixed-camera/train"
-background_path = "/media/andrey/Elements2/RESEARCH/Captured_Data/background"
+path = "/path/to/Captured_Data/fixed-camera/train"
+background_path = "/path/to/Captured_Data/background"
 output_csv = "Video_data_train.csv"
 
 #######################################
