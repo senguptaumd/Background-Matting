@@ -21,11 +21,11 @@ backgrounds = [os.path.join(background_path, f[:-4]) for f in os.listdir(backgro
 print(f"Dumping frames and segmenting {len(videos)} input videos")
 for i, video in enumerate(tqdm(videos)):
     os.makedirs(video, exist_ok=True)
-    code = os.system(f"ffmpeg -i {video}.mp4 {video}/%04d_img.png -hide_banner > /dev/null 2>&1")
+    code = os.system(f"ffmpeg -i {video}.mp4 {video}/%04d_img.png -hide_banner > prepare_real_logs.txt 2>&1")
     if code != 0:
         exit(code)
     print(f"Dumped frames for {video} ({i+1}/{len(videos)})")
-    code = os.system(f"python test_segmentation_deeplab.py -i {video} > /dev/null 2>&1")
+    code = os.system(f"python test_segmentation_deeplab.py -i {video} > prepare_real_logs.txt 2>&1")
     if code != 0:
         exit(code)
     print(f"Segmented {video} ({i+1}/{len(videos)})")
