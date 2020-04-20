@@ -32,8 +32,8 @@ for i, video in enumerate(tqdm(videos)):
 
 print(f"Dumping frames for {background_path} background videos")
 for i, background in enumerate(tqdm(backgrounds)):
-    os.makedirs(background)
-    code = os.system(f"ffmpeg -i {background}.mp4 {background}/%04d_img.png -hide_banner > /dev/null 2>&1")
+    os.makedirs(background, exist_ok=True)
+    code = os.system(f"ffmpeg -i {background}.MOV {background}/%04d_img.png -hide_banner > /dev/null 2>&1")
     if code != 0:
         exit(code)
     print(f"Dumped frames for {background} ({i+1}/{len(videos)})")
