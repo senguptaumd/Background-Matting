@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# ./copy_human_images.sh /home/andrey/projects/matting2/data/Adobe/Combined_Dataset
+# ./prepare.sh /path/to/Adobe/Combined_Dataset
 
 function copy_adobe() {
   while read p; do
