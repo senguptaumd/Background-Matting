@@ -31,10 +31,15 @@ This work is licensed under the [Creative Commons Attribution NonCommercial Shar
 - [Inference Code on videos](#run-the-inference-code-on-sample-videos)
 - [Notes on capturing images](#notes-on-capturing-images)
 - [Training code (coming soon ...)](#training-code)
-- [Captured Data (coming soon ...)](#dataset)
+- [Captured Data](#dataset)
+- [Inference in Google Colab](#google-colab)
 - [Citations](#citation)
 
 ## **Updates** ##
+April 20,2020
+- New features:
+	- [Google Colab for inference](https://gist.github.com/andreyryabtsev/243aa3eefa6e06891dda7b1583d1d08f), thanks to Andrey Ryabtsev, University of Washington.
+	- [Captured data released for research purposes.](https://drive.google.com/open?id=1j3BMrRFhFpfzJAe6P2WDtfanoeSCLPiq)
 April 9, 2020
 - Issues:
 	- Updated alignment function in pre-processing code. Python version uses AKAZE features (SIFT and SURF is not available with opencv3), MATLAB version also provided uses SURF features.
@@ -220,7 +225,15 @@ We will also release the training code, which will allow users to train on label
 
 ## Dataset
 
-We collected 50 videos with both fixed and hand-held camera in indoor and outdoor settings. We plan to release this data to encourage future research on improving background matting.
+We captured videos with both fixed and hand-held camera in indoor and outdoor settings. We release this data to encourage future research on improving background matting. The data is released for research purposes only.
+
+[Download data](https://drive.google.com/open?id=1j3BMrRFhFpfzJAe6P2WDtfanoeSCLPiq)
+
+## Google Colab
+
+Thanks to Andrey Ryabstev for creating Google Colab version for easy inference on images and videos of your choice.
+
+[Google Colab](https://gist.github.com/andreyryabtsev/243aa3eefa6e06891dda7b1583d1d08f)
 
 **Coming soon ...**
 
