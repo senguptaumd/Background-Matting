@@ -31,7 +31,7 @@ def compose_image_withshift(alpha_pred,fg_pred,bg,seg):
 
         image_sh[t,...]=fg_pred_sh*alpha_pred_sh + (1-alpha_pred_sh)*bg[t,...]
 
-    return Variable(image_sh.cuda())
+    return torch.autograd.Variable(image_sh.cuda())
 
 def get_bbox(mask,R,C):
     where = np.array(np.where(mask))
