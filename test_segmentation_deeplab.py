@@ -144,8 +144,8 @@ if not os.path.exists(model_dir):
   tf.gfile.MakeDirs(model_dir)
 
 download_path = os.path.join(model_dir, _TARBALL_NAME)
-print('downloading model to %s, this might take a while...' % download_path)
 if not os.path.exists(download_path):
+  print('downloading model to %s, this might take a while...' % download_path)
   urllib.request.urlretrieve(_DOWNLOAD_URL_PREFIX + _MODEL_URLS[MODEL_NAME], 
 			     download_path)
   print('download completed! loading DeepLab model...')

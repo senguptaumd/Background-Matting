@@ -1,4 +1,6 @@
 import numpy as np
+import torch
+import torchvision
 import cv2, pdb
 
 
@@ -8,6 +10,28 @@ def composite4(fg, bg, a):
 	im = alpha * fg + (1 - alpha) * bg
 	im = im.astype(np.uint8)
 	return im
+
+def compose_image_withshift(alpha_pred,fg_pred,bg,seg):
+
+    image_sh=torch.zeros(fg_pred.shape).cuda()
+
+    for t in range(0,fg_pred.shape[0]):
+        al_tmp=to_image(seg[t,...]).squeeze(2)
+        where = np.array(np.where((al_tmp>0.1).astype(np.float32)))
+        x1, y1 = np.amin(where, axis=1)
+        x2, y2 = np.amax(where, axis=1)
+
+        #select shift
+        n=np.random.randint(-(y1-10),al_tmp.shape[1]-y2-10)
+        #n positive indicates shift to right
+        alpha_pred_sh=torch.cat((alpha_pred[t,:,:,-n:],alpha_pred[t,:,:,:-n]),dim=2)
+        fg_pred_sh=torch.cat((fg_pred[t,:,:,-n:],fg_pred[t,:,:,:-n]),dim=2)
+
+        alpha_pred_sh=(alpha_pred_sh+1)/2
+
+        image_sh[t,...]=fg_pred_sh*alpha_pred_sh + (1-alpha_pred_sh)*bg[t,...]
+
+    return torch.autograd.Variable(image_sh.cuda())
 
 def get_bbox(mask,R,C):
     where = np.array(np.where(mask))
@@ -75,4 +99,12 @@ def to_image(rec0):
     rec0[rec0>1]=1
     rec0[rec0<0]=0
     return rec0
+
+def write_tb_log(image,tag,log_writer,i):
+    # image1
+    output_to_show = image.cpu().data[0:4,...]
+    output_to_show = (output_to_show + 1)/2.0
+    grid = torchvision.utils.make_grid(output_to_show,nrow=4)
+
+    log_writer.add_image(tag, grid, i + 1)
 
