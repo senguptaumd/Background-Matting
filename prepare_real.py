@@ -48,7 +48,7 @@ with open(output_csv, "w") as f:
     for i, video in enumerate(videos):
         n = len(os.listdir(video))
         for j in range(1, n + 1 - 80):
-            img_name = "%04d_img.png" % j
+            img_name = video + "/%04d_img.png" % j
             captured_back = video + ".png"
             seg_name = "%04d_masksDL.png" % j
             mc1 = "%04d_img.png" % (j + 20)
