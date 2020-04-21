@@ -50,7 +50,7 @@ with open(output_csv, "w") as f:
         for j in range(1, n + 1 - 80):
             img_name = video + "/%04d_img.png" % j
             captured_back = video + ".png"
-            seg_name = "/%04d_masksDL.png" % j
+            seg_name = video + "/%04d_masksDL.png" % j
             mc1 = video + "/%04d_img.png" % (j + 20)
             mc2 = video + "/%04d_img.png" % (j + 40)
             mc3 = video + "/%04d_img.png" % (j + 60)
