@@ -1,7 +1,6 @@
 from __future__ import print_function
 
 import torch
-import torchvision
 from torch.autograd import Variable
 import torch.nn as nn
 import torch.optim as optim
@@ -11,10 +10,7 @@ from tensorboardX import SummaryWriter
 import os
 import time
 import argparse
-import matplotlib.pyplot as plt
 import numpy as np
-import cv2
-import pdb
 
 from data_loader import VideoData
 from functions import *
@@ -35,7 +31,7 @@ parser.add_argument('-bs', '--batch_size', type=int, help='Batch Size.')
 parser.add_argument('-res', '--reso', type=int, help='Input image resolution')
 parser.add_argument('-init_model', '--init_model', type=str, help='Initial model file')
 
-arser.add_argument('-epoch', '--epoch', type=int, default=15,help='Maximum Epoch')
+parser.add_argument('-epoch', '--epoch', type=int, default=15,help='Maximum Epoch')
 parser.add_argument('-n_blocks1', '--n_blocks1', type=int, default=7,help='Number of residual blocks after Context Switching.')
 parser.add_argument('-n_blocks2', '--n_blocks2', type=int, default=3,help='Number of residual blocks for Fg and alpha each.')
 
@@ -58,9 +54,13 @@ data_config_train = {'reso': (args.reso,args.reso)}  #if trimap is true, rcnn is
 # DATA LOADING
 print('\n[Phase 1] : Data Preparation')
 
+def collate_filter_none(batch):
+	batch = list(filter(lambda x: x is not None, batch))
+	return torch.utils.data.dataloader.default_collate(batch)
+
 #Original Data
 traindata =  VideoData(csv_file='Video_data_train.csv',data_config=data_config_train,transform=None)  #Write a dataloader function that can read the database provided by .csv file
-train_loader = torch.utils.data.DataLoader(traindata, batch_size=args.batch_size, shuffle=True, num_workers=args.batch_size)
+train_loader = torch.utils.data.DataLoader(traindata, batch_size=args.batch_size, shuffle=True, num_workers=args.batch_size, collate_fn=collate_filter_none)
 
 
 print('\n[Phase 2] : Initialization')
@@ -76,7 +76,7 @@ netG=ResnetConditionHR(input_nc=(3,3,1,4),output_nc=4,n_blocks1=args.n_blocks1,n
 netG.apply(conv_init)
 netG=nn.DataParallel(netG)
 netG.cuda()
-cudnn.benchmark=True
+torch.backends.cudnn.benchmark=True
 
 netD=MultiscaleDiscriminator(input_nc=3,num_D=1,norm_layer=nn.InstanceNorm2d,ndf=64)
 netD.apply(conv_init)
