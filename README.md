@@ -21,6 +21,8 @@ Go to Project page for additional details and results.
 * [Steve Seitz](https://homes.cs.washington.edu/~seitz/), University of Washington
 * [Ira Kemelmacher-Shlizerman](https://homes.cs.washington.edu/~kemelmi/), University of Washington
 
+Acknowledgement: [Andrey Ryabtsev](http://www.andreyryabtsev.com/#projects), University of Washington
+
 ### License ###
 This work is licensed under the [Creative Commons Attribution NonCommercial ShareAlike 4.0 License](https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode).
 
@@ -30,12 +32,16 @@ This work is licensed under the [Creative Commons Attribution NonCommercial Shar
 - [Inference Code on images](#run-the-inference-code-on-sample-images)
 - [Inference Code on videos](#run-the-inference-code-on-sample-videos)
 - [Notes on capturing images](#notes-on-capturing-images)
-- [Training code (coming soon ...)](#training-code)
+- [Training code on synthetic-composite Adobe dataset](#training-on-synthetic-composite-adobe-dataset)
+- [Training code on unlabeled real videos](#training-on-unlabeled-real-videos)
 - [Captured Data](#dataset)
 - [Inference in Google Colab](#google-colab)
 - [Citations](#citation)
 
 ## **Updates** ##
+April 21, 2020:
+- New features:
+	- Training code for [supervised training on synthetic-composite Adobe dataset](#training-on-synthetic-composite-adobe-dataset) and [self-supervised learning on unlabeled real videos](#training-on-unlabeled-real-videos).
 April 20,2020
 - New features:
 	- [Google Colab for inference](https://gist.github.com/andreyryabtsev/243aa3eefa6e06891dda7b1583d1d08f), thanks to Andrey Ryabtsev, University of Washington.
