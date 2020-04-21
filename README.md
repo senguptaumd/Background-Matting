@@ -42,10 +42,12 @@ This work is licensed under the [Creative Commons Attribution NonCommercial Shar
 April 21, 2020:
 - New features:
 	- Training code for [supervised training on synthetic-composite Adobe dataset](#training-on-synthetic-composite-adobe-dataset) and [self-supervised learning on unlabeled real videos](#training-on-unlabeled-real-videos).
+
 April 20,2020
 - New features:
 	- [Google Colab for inference](https://gist.github.com/andreyryabtsev/243aa3eefa6e06891dda7b1583d1d08f), thanks to Andrey Ryabtsev, University of Washington.
 	- [Captured data released for research purposes.](https://drive.google.com/open?id=1j3BMrRFhFpfzJAe6P2WDtfanoeSCLPiq)
+
 April 9, 2020
 - Issues:
 	- Updated alignment function in pre-processing code. Python version uses AKAZE features (SIFT and SURF is not available with opencv3), MATLAB version also provided uses SURF features.
