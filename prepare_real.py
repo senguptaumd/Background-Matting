@@ -47,6 +47,8 @@ background_stream = cycle(background_frames)
 with open(output_csv, "w") as f:
     for i, video in enumerate(videos):
         n = len(os.listdir(video))
+        assert n % 2 == 0
+        n //= 2
         for j in range(1, n + 1 - 80):
             img_name = video + "/%04d_img.png" % j
             captured_back = video + ".png"
