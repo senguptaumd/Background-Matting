@@ -65,14 +65,14 @@ train_loader = torch.utils.data.DataLoader(traindata, batch_size=args.batch_size
 
 print('\n[Phase 2] : Initialization')
 
-netB=ResnetConditionHR(input_nc=(3,3,1,4),output_nc=4,n_blocks1=args.n_blocks1,n_blocks2=args.n_blocks1)
+netB=ResnetConditionHR(input_nc=(3,3,1,4),output_nc=4,n_blocks1=args.n_blocks1,n_blocks2=args.n_blocks2)
 netB=nn.DataParallel(netB)
 netB.load_state_dict(torch.load(args.init_model))
 netB.cuda(); netB.eval()
 for param in netB.parameters(): #freeze netD
 	param.requires_grad = False
 
-netG=ResnetConditionHR(input_nc=(3,3,1,4),output_nc=4,n_blocks1=args.n_blocks1,n_blocks2=args.n_blocks1)
+netG=ResnetConditionHR(input_nc=(3,3,1,4),output_nc=4,n_blocks1=args.n_blocks1,n_blocks2=args.n_blocks2)
 netG.apply(conv_init)
 netG=nn.DataParallel(netG)
 netG.cuda()

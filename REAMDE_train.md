@@ -37,10 +37,10 @@ Cheers to the [unofficial Deep Image Matting repo.](https://github.com/foamliu/D
 [Please download our captured videos.](https://drive.google.com/drive/folders/1j3BMrRFhFpfzJAe6P2WDtfanoeSCLPiq?usp=sharing). We will show next how to finetune your model on `fixed-camera` captured videos. It will be similar for `hand-held` cameras, except you will need to align the captured background image to each frame of the video separately. (Take a hint from `test_pre_process.py` and use `alignImages()`.) 
 
 Data Pre-processing: 
-	- Extract frames for each video: `ffmpeg -i $NAME.mp4 $NAME/%04d_img.png -hide_banner`
-	- Run Segmentation (follow instructions on Deeplabv3+) : `python test_segmentation_deeplab.py -i $NAME`
-	- Target background for composition. For self-supervised learning we need some target backgrounds that has roughly similar lighting as the original videos. Either capture few videos of indoor/outdoor scenes without humans or use our captured background in the `background` folder.
-	- Create a .csv file `Video_data_train.csv` with each row as: `$image;$captured_back;$segmentation;$image+20frames;$image+2*20frames;$image+3*20frames;$image+4*20frames;$target_back`.
+- Extract frames for each video: `ffmpeg -i $NAME.mp4 $NAME/%04d_img.png -hide_banner`
+- Run Segmentation (follow instructions on Deeplabv3+) : `python test_segmentation_deeplab.py -i $NAME`
+- Target background for composition. For self-supervised learning we need some target backgrounds that has roughly similar lighting as the original videos. Either capture few videos of indoor/outdoor scenes without humans or use our captured background in the `background` folder.
+- Create a .csv file `Video_data_train.csv` with each row as: `$image;$captured_back;$segmentation;$image+20frames;$image+2*20frames;$image+3*20frames;$image+4*20frames;$target_back`.
 The process is automated by `prepare_real.py` -- take a look inside and change `background_path` and `path` before running.
 
 ### Training ###
