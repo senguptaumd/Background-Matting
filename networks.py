@@ -96,7 +96,7 @@ class ResnetConditionHR(nn.Module):
 		seg_feat=self.model_enc_seg(seg)
 		multi_feat=self.model_enc_multi(multi)
 
-		oth_feat=torch.cat([self.comb_back(torch.cat([img_feat,back_feat],dim=1)),self.comb_seg(torch.cat([img_feat,seg_feat],dim=1)),self.comb_multi(torch.cat([img_feat,back_feat],dim=1))],dim=1)
+		oth_feat=torch.cat([self.comb_back(torch.cat([img_feat,back_feat],dim=1)),self.comb_seg(torch.cat([img_feat,seg_feat],dim=1)),self.comb_multi(torch.cat([img_feat,multi_feat],dim=1))],dim=1)
 
 		out_dec=self.model_res_dec(torch.cat([img_feat,oth_feat],dim=1))
 
