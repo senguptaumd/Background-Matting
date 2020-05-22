@@ -37,7 +37,7 @@ This work is licensed under the [Creative Commons Attribution NonCommercial Shar
 - [Captured Data](#dataset)
 - [Inference in Google Colab](#google-colab)
 - [Citations](#citation)
-- [Other Implementations/Variations](#other-implementations/Variations)
+- [Related Implementations](#related-implementations)
 
 ## **Updates** ##
 April 21, 2020:
@@ -309,7 +309,7 @@ If you use this code for your research, please consider citing:
 }
 ```
 
-## Other Implementations/Variations
+## Related Implementations
 [Microsoft Virtual Stage](https://github.com/microsoft/ailab/tree/master/VirtualStage): Using our background matting technology along with depth sensing with Kinect, Microsoft opensourced this amazing code for virtual staging. [Follow this link for details of their technique.](https://www.microsoft.com/en-us/ai/ai-lab-virtual-stage)
 
 [Weights & Biases](https://app.wandb.ai/stacey/greenscreen/reports/Two-Shots-to-Green-Screen%3A-Collage-with-Deep-Learning--VmlldzoxMDc4MjY): Great presentation and detailed discussions and insights on pre-processing and training our model. Check out [Two Minutes Paper's](https://www.youtube.com/watch?v=sTe_-YOccdM) take on our work.
