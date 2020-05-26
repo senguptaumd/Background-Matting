@@ -17,7 +17,7 @@ from networks import ResnetConditionHR
 
 torch.set_num_threads(1)
 #os.environ["CUDA_VISIBLE_DEVICES"]="4"
-print('CUDA Device: ' + os.environ["CUDA_VISIBLE_DEVICES"])
+#print('CUDA Device: ' + os.environ["CUDA_VISIBLE_DEVICES"])
 
 
 """Parses arguments."""
@@ -54,8 +54,9 @@ fo=glob.glob(model_main_dir + 'netG_epoch_*')
 model_name1=fo[0]
 netM=ResnetConditionHR(input_nc=(3,3,1,4),output_nc=4,n_blocks1=7,n_blocks2=3)
 netM=nn.DataParallel(netM)
-netM.load_state_dict(torch.load(model_name1))
-netM.cuda(); netM.eval()
+netM.load_state_dict(torch.load(model_name1),map_location=torch.device('cpu'))
+#netM.cuda();
+netM.eval()
 cudnn.benchmark=True
 reso=(512,512) #input reoslution to the network
 
@@ -153,12 +154,14 @@ for i in range(0,len(test_imgs)):
 
 
 	with torch.no_grad():
-		img,bg,rcnn_al, multi_fr =Variable(img.cuda()),  Variable(bg.cuda()), Variable(rcnn_al.cuda()), Variable(multi_fr.cuda())
+		#img,bg,rcnn_al, multi_fr =Variable(img.cuda()),  Variable(bg.cuda()), Variable(rcnn_al.cuda()), Variable(multi_fr.cuda())
+		img,bg,rcnn_al, multi_fr =Variable(img),  Variable(bg), Variable(rcnn_al), Variable(multi_fr)
 		input_im=torch.cat([img,bg,rcnn_al,multi_fr],dim=1)
 		
 		alpha_pred,fg_pred_tmp=netM(img,bg,rcnn_al,multi_fr)
 		
-		al_mask=(alpha_pred>0.95).type(torch.cuda.FloatTensor)
+		#al_mask=(alpha_pred>0.95).type(torch.cuda.FloatTensor)
+		al_mask=(alpha_pred>0.95).type(torch.FloatTensor)
 
 		# for regions with alpha>0.95, simply use the image as fg
 		fg_pred=img*al_mask + fg_pred_tmp*(1-al_mask)
