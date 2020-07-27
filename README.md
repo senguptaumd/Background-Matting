@@ -76,6 +76,7 @@ conda create --name back-matting python=3.6
 conda activate back-matting
 ```
 Install PyTorch, Tensorflow (needed for segmentation) and dependencies
+
 **GPU**
 ```
 conda install pytorch=1.1.0 torchvision cudatoolkit=10.0 -c pytorch
@@ -87,6 +88,7 @@ Make sure CUDA 10.0 is your default cuda. If your CUDA 10.0 is installed in `/us
 export LD_LIBRARY_PATH=/usr/local/cuda-10.0/lib64
 export PATH=$PATH:/usr/local/cuda-10.0/bin
 ```
+
 **CPU**
 ```
 conda install pytorch=1.1.0 torchvision cpuonly -c pytorch
