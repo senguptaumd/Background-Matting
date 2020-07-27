@@ -27,7 +27,7 @@ Acknowledgement: [Andrey Ryabtsev](http://www.andreyryabtsev.com/#projects), Uni
 This work is licensed under the [Creative Commons Attribution NonCommercial ShareAlike 4.0 License](https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode).
 
 ## Summary ##
-- [Updates](#updates) 
+- [Updates](#updates)
 - [Getting Started](#getting-started)
 - [Inference Code on images](#run-the-inference-code-on-sample-images)
 - [Inference Code on videos](#run-the-inference-code-on-sample-videos)
@@ -62,9 +62,9 @@ April 8, 2020
 
 
 
-## Getting Started 
+## Getting Started
 
-Clone repository: 
+Clone repository:
 ```
 git clone https://github.com/senguptaumd/Background-Matting.git
 ```
@@ -75,17 +75,23 @@ Please use Python 3. Create an [Anaconda](https://www.anaconda.com/distribution/
 conda create --name back-matting python=3.6
 conda activate back-matting
 ```
-Make sure CUDA 10.0 is your default cuda. If your CUDA 10.0 is installed in `/usr/local/cuda-10.0`, apply
-```
-export LD_LIBRARY_PATH=/usr/local/cuda-10.0/lib64
-export PATH=$PATH:/usr/local/cuda-10.0/bin
-``` 
 Install PyTorch, Tensorflow (needed for segmentation) and dependencies
+**GPU**
 ```
 conda install pytorch=1.1.0 torchvision cudatoolkit=10.0 -c pytorch
 pip install tensorflow-gpu==1.14.0
 pip install -r requirements.txt
-
+```
+Make sure CUDA 10.0 is your default cuda. If your CUDA 10.0 is installed in `/usr/local/cuda-10.0`, apply
+```
+export LD_LIBRARY_PATH=/usr/local/cuda-10.0/lib64
+export PATH=$PATH:/usr/local/cuda-10.0/bin
+```
+**CPU**
+```
+conda install pytorch=1.1.0 torchvision cpuonly -c pytorch
+conda install tensorflow=1.14.0
+pip install -r requirements.txt
 ```
 
 Note: The code is likely to work on other PyTorch and Tensorflow versions compatible with your system CUDA. If you already have a working environment with PyTorch and Tensorflow, only install dependencies with `pip install -r requirements.txt`. If our code fails due to different versions, then you need to install specific CUDA, PyTorch and Tensorflow versions.
@@ -225,7 +231,7 @@ For best results capture images following these guidelines:
 	- avoid backgrounds that has two perpendicular planes (homography based alignment will fail) or use a background very far away.
 	- The above restirctions do not apply for images captured with fixed camera (on a tripod)
 
-	 
+
 
 ## Training on synthetic-composite Adobe dataset ##
 
@@ -263,9 +269,9 @@ Cheers to the [unofficial Deep Image Matting repo.](https://github.com/foamliu/D
 
 ### Data ###
 
-[Please download our captured videos.](https://drive.google.com/drive/folders/1j3BMrRFhFpfzJAe6P2WDtfanoeSCLPiq?usp=sharing). We will show next how to finetune your model on `fixed-camera` captured videos. It will be similar for `hand-held` cameras, except you will need to align the captured background image to each frame of the video separately. (Take a hint from `test_pre_process.py` and use `alignImages()`.) 
+[Please download our captured videos.](https://drive.google.com/drive/folders/1j3BMrRFhFpfzJAe6P2WDtfanoeSCLPiq?usp=sharing). We will show next how to finetune your model on `fixed-camera` captured videos. It will be similar for `hand-held` cameras, except you will need to align the captured background image to each frame of the video separately. (Take a hint from `test_pre_process.py` and use `alignImages()`.)
 
-Data Pre-processing: 
+Data Pre-processing:
 - Extract frames for each video: `ffmpeg -i $NAME.mp4 $NAME/%04d_img.png -hide_banner`
 - Run Segmentation (follow instructions on Deeplabv3+) : `python test_segmentation_deeplab.py -i $NAME`
 - Target background for composition. For self-supervised learning we need some target backgrounds that has roughly similar lighting as the original videos. Either capture few videos of indoor/outdoor scenes without humans or use our captured background in the `background` folder.

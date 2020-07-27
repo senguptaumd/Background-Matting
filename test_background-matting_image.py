@@ -16,8 +16,10 @@ from functions import *
 from networks import ResnetConditionHR
 
 torch.set_num_threads(1)
-#os.environ["CUDA_VISIBLE_DEVICES"]="4"
-#print('CUDA Device: ' + os.environ["CUDA_VISIBLE_DEVICES"])
+
+if torch.cuda.is_available():
+	os.environ["CUDA_VISIBLE_DEVICES"]="4"
+	print('CUDA Device: ' + os.environ["CUDA_VISIBLE_DEVICES"])
 
 
 """Parses arguments."""
@@ -54,8 +56,11 @@ fo=glob.glob(model_main_dir + 'netG_epoch_*')
 model_name1=fo[0]
 netM=ResnetConditionHR(input_nc=(3,3,1,4),output_nc=4,n_blocks1=7,n_blocks2=3)
 netM=nn.DataParallel(netM)
-netM.load_state_dict(torch.load(model_name1),map_location=torch.device('cpu'))
-#netM.cuda();
+if torch.cuda.is_available():
+	netM.load_state_dict(torch.load(model_name1))
+	netM.cuda()
+else:
+	netM.load_state_dict(torch.load(model_name1, map_location=torch.device('cpu')))
 netM.eval()
 cudnn.benchmark=True
 reso=(512,512) #input reoslution to the network
@@ -77,7 +82,7 @@ if not os.path.exists(result_path):
 	os.makedirs(result_path)
 
 for i in range(0,len(test_imgs)):
-	filename = test_imgs[i]	
+	filename = test_imgs[i]
 	#original image
 	bgr_img = cv2.imread(os.path.join(data_path, filename)); bgr_img=cv2.cvtColor(bgr_img,cv2.COLOR_BGR2RGB);
 
@@ -116,7 +121,7 @@ for i in range(0,len(test_imgs)):
 		multi_fr_w[...,2] = multi_fr_w[...,0]
 		multi_fr_w[...,3] = multi_fr_w[...,0]
 
-		
+
 	#crop tightly
 	bgr_img0=bgr_img;
 	bbox=get_bbox(rcnn,R=bgr_img0.shape[0],C=bgr_img0.shape[1])
@@ -154,19 +159,23 @@ for i in range(0,len(test_imgs)):
 
 
 	with torch.no_grad():
-		#img,bg,rcnn_al, multi_fr =Variable(img.cuda()),  Variable(bg.cuda()), Variable(rcnn_al.cuda()), Variable(multi_fr.cuda())
-		img,bg,rcnn_al, multi_fr =Variable(img),  Variable(bg), Variable(rcnn_al), Variable(multi_fr)
+		if torch.cuda.is_available():
+			img,bg,rcnn_al, multi_fr =Variable(img.cuda()),  Variable(bg.cuda()), Variable(rcnn_al.cuda()), Variable(multi_fr.cuda())
+		else:
+			img,bg,rcnn_al, multi_fr =Variable(img),  Variable(bg), Variable(rcnn_al), Variable(multi_fr)
 		input_im=torch.cat([img,bg,rcnn_al,multi_fr],dim=1)
-		
+
 		alpha_pred,fg_pred_tmp=netM(img,bg,rcnn_al,multi_fr)
-		
-		#al_mask=(alpha_pred>0.95).type(torch.cuda.FloatTensor)
-		al_mask=(alpha_pred>0.95).type(torch.FloatTensor)
+
+		if torch.cuda.is_available():
+			al_mask=(alpha_pred>0.95).type(torch.cuda.FloatTensor)
+		else:
+			al_mask=(alpha_pred>0.95).type(torch.FloatTensor)
 
 		# for regions with alpha>0.95, simply use the image as fg
 		fg_pred=img*al_mask + fg_pred_tmp*(1-al_mask)
 
-		alpha_out=to_image(alpha_pred[0,...]); 
+		alpha_out=to_image(alpha_pred[0,...]);
 
 		#refine alpha with connected component
 		labels=label((alpha_out>0.05).astype(int))
@@ -177,7 +186,7 @@ for i in range(0,len(test_imgs)):
 		largestCC = labels == np.argmax(np.bincount(labels.flat)[1:])+1
 		alpha_out=alpha_out*largestCC
 
-		alpha_out=(255*alpha_out[...,0]).astype(np.uint8)				
+		alpha_out=(255*alpha_out[...,0]).astype(np.uint8)
 
 		fg_out=to_image(fg_pred[0,...]); fg_out=fg_out*np.expand_dims((alpha_out.astype(float)/255>0.01).astype(float),axis=2); fg_out=(255*fg_out).astype(np.uint8)
 
@@ -196,6 +205,5 @@ for i in range(0,len(test_imgs)):
 	cv2.imwrite(result_path+'/'+filename.replace('_img','_compose'), cv2.cvtColor(comp_im_tr1,cv2.COLOR_BGR2RGB))
 	cv2.imwrite(result_path+'/'+filename.replace('_img','_matte').format(i), cv2.cvtColor(comp_im_tr2,cv2.COLOR_BGR2RGB))
 
-	
-	print('Done: ' + str(i+1) + '/' + str(len(test_imgs)))
 
+	print('Done: ' + str(i+1) + '/' + str(len(test_imgs)))
