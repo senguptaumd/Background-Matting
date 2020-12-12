@@ -189,6 +189,7 @@ if __name__ == '__main__':
         print("Found {} videos in {}".format(len(video_paths), video_dir))
 
         for video_path in tqdm.tqdm(video_paths):
+            print("Processing video", video_path)
             video = cv2.VideoCapture(video_path)
             num_frames = int(video.get(cv2.CAP_PROP_FRAME_COUNT))
             fps = int(video.get(cv2.CAP_PROP_FPS))
@@ -226,3 +227,5 @@ if __name__ == '__main__':
             video_writer.release()
     else:
         print("No video dir specified!")
+
+    print("Finished processing")
