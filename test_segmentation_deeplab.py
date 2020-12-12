@@ -1,14 +1,15 @@
 import os
-from io import BytesIO
 import tarfile
-import tempfile
-from six.moves import urllib
+from pathlib import Path
 
+import argparse
+import cv2
+import glob
 import numpy as np
-from PIL import Image
-import cv2, pdb, glob, argparse
-
 import tensorflow as tf
+import tqdm
+from PIL import Image
+from six.moves import urllib
 
 
 class DeepLabModel(object):
@@ -109,9 +110,9 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Deeplab Segmentation')
     parser.add_argument('-i', '--image_dir', default=None, type=str,
                         help='Directory to search for images (*_img.png)')
+    parser.add_argument('-v', '--video_dir', default=None, type=str,
+                        help='Directory to search for videos (*.mp4)')
     args = parser.parse_args()
-
-    dir_name = args.input_dir
 
 ## setup ####################
 
@@ -141,7 +142,7 @@ if __name__ == '__main__':
 
     model_dir = 'deeplab_model'
     if not os.path.exists(model_dir):
-        tf.gfile.MakeDirs(model_dir)
+        tf.io.gfile.makedirs(model_dir)
 
     download_path = os.path.join(model_dir, _TARBALL_NAME)
     if not os.path.exists(download_path):
@@ -154,21 +155,74 @@ if __name__ == '__main__':
     print('model loaded successfully!')
 
     #######################################################################################
+    # Images
 
-    list_im = glob.glob(dir_name + '/*_img.png')
-    list_im.sort()
+    image_dir = args.image_dir
+    if image_dir:
+        image_paths = glob.glob(image_dir + '/*_img.png')
+        image_paths.sort()
+        print("Found {} images in {}".format(len(image_paths), image_dir))
 
-    for i in range(0, len(list_im)):
-        image = Image.open(list_im[i])
+        for image_path in tqdm.tqdm(image_paths):
+            image = Image.open(image_path)
 
-        res_im, seg = MODEL.run(image)
+            res_im, seg = MODEL.run(image)
 
-        seg = cv2.resize(seg.astype(np.uint8), image.size)
+            seg = cv2.resize(seg.astype(np.uint8), image.size)
 
-        mask_sel = (seg == 15).astype(np.float32)
+            mask_sel = (seg == 15).astype(np.float32)
 
-        name = list_im[i].replace('img', 'masksDL')
-        cv2.imwrite(name, (255 * mask_sel).astype(np.uint8))
+            name = image_path.replace('img', 'masksDL')
+            cv2.imwrite(name, (255 * mask_sel).astype(np.uint8))
 
-    str_msg = '\nDone: ' + dir_name
-    print(str_msg)
+        print('\nDone: ' + image_dir)
+    else:
+        print("No image dir specified!")
+
+    #######################################################################################
+    # Videos
+    video_dir = args.video_dir
+
+    if video_dir:
+        video_paths = glob.glob(video_dir + '/*_raw.mp4')
+        video_paths.sort()
+        print("Found {} videos in {}".format(len(video_paths), video_dir))
+
+        for video_path in tqdm.tqdm(video_paths):
+            video = cv2.VideoCapture(video_path)
+            num_frames = int(video.get(cv2.CAP_PROP_FRAME_COUNT))
+            fps = int(video.get(cv2.CAP_PROP_FPS))
+            width = int(video.get(cv2.CAP_PROP_FRAME_WIDTH))
+            height = int(video.get(cv2.CAP_PROP_FRAME_HEIGHT))
+
+            output_path = video_path.replace("raw", "masksDL").replace("mp4", "avi")
+
+            video_writer = cv2.VideoWriter(output_path,
+                                           cv2.VideoWriter_fourcc(*'png '),
+                                           fps,
+                                           (width, height))
+
+            for i_frame in tqdm.trange(num_frames):
+                ret, frame = video.read()
+
+                if not ret:
+                    print("Could not read video frame {}!".format(i_frame))
+
+                frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+                image = Image.fromarray(frame)
+
+                res_im, seg = MODEL.run(image)
+
+                seg = cv2.resize(seg.astype(np.uint8), image.size)
+
+                mask_sel = (seg == 15).astype(np.float32)
+
+                # Make 3 channel image
+                mask_sel = np.repeat(np.expand_dims(mask_sel, -1), 3, axis=2)
+
+                video_writer.write((255 * mask_sel).astype(np.uint8))
+
+            video.release()
+            video_writer.release()
+    else:
+        print("No video dir specified!")
