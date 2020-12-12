@@ -105,70 +105,70 @@ def label_to_color_image(label):
     return colormap[label]
 
 
-parser = argparse.ArgumentParser(description='Deeplab Segmentation')
-parser.add_argument('-i', '--input_dir', type=str, required=True,
-                    help='Directory to save the output results. (required)')
-args = parser.parse_args()
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description='Deeplab Segmentation')
+    parser.add_argument('-i', '--image_dir', default=None, type=str,
+                        help='Directory to search for images (*_img.png)')
+    args = parser.parse_args()
 
-dir_name = args.input_dir
+    dir_name = args.input_dir
 
 ## setup ####################
 
-LABEL_NAMES = np.asarray([
-    'background', 'aeroplane', 'bicycle', 'bird', 'boat', 'bottle', 'bus',
-    'car', 'cat', 'chair', 'cow', 'diningtable', 'dog', 'horse', 'motorbike',
-    'person', 'pottedplant', 'sheep', 'sofa', 'train', 'tv'
-])
+    LABEL_NAMES = np.asarray([
+        'background', 'aeroplane', 'bicycle', 'bird', 'boat', 'bottle', 'bus',
+        'car', 'cat', 'chair', 'cow', 'diningtable', 'dog', 'horse', 'motorbike',
+        'person', 'pottedplant', 'sheep', 'sofa', 'train', 'tv'
+    ])
 
-FULL_LABEL_MAP = np.arange(len(LABEL_NAMES)).reshape(len(LABEL_NAMES), 1)
-FULL_COLOR_MAP = label_to_color_image(FULL_LABEL_MAP)
+    FULL_LABEL_MAP = np.arange(len(LABEL_NAMES)).reshape(len(LABEL_NAMES), 1)
+    FULL_COLOR_MAP = label_to_color_image(FULL_LABEL_MAP)
 
-MODEL_NAME = 'xception_coco_voctrainval'  # @param ['mobilenetv2_coco_voctrainaug', 'mobilenetv2_coco_voctrainval', 'xception_coco_voctrainaug', 'xception_coco_voctrainval']
+    MODEL_NAME = 'xception_coco_voctrainval'  # @param ['mobilenetv2_coco_voctrainaug', 'mobilenetv2_coco_voctrainval', 'xception_coco_voctrainaug', 'xception_coco_voctrainval']
 
-_DOWNLOAD_URL_PREFIX = 'http://download.tensorflow.org/models/'
-_MODEL_URLS = {
-    'mobilenetv2_coco_voctrainaug':
-        'deeplabv3_mnv2_pascal_train_aug_2018_01_29.tar.gz',
-    'mobilenetv2_coco_voctrainval':
-        'deeplabv3_mnv2_pascal_trainval_2018_01_29.tar.gz',
-    'xception_coco_voctrainaug':
-        'deeplabv3_pascal_train_aug_2018_01_04.tar.gz',
-    'xception_coco_voctrainval':
-        'deeplabv3_pascal_trainval_2018_01_04.tar.gz',
-}
-_TARBALL_NAME = _MODEL_URLS[MODEL_NAME]
+    _DOWNLOAD_URL_PREFIX = 'http://download.tensorflow.org/models/'
+    _MODEL_URLS = {
+        'mobilenetv2_coco_voctrainaug':
+            'deeplabv3_mnv2_pascal_train_aug_2018_01_29.tar.gz',
+        'mobilenetv2_coco_voctrainval':
+            'deeplabv3_mnv2_pascal_trainval_2018_01_29.tar.gz',
+        'xception_coco_voctrainaug':
+            'deeplabv3_pascal_train_aug_2018_01_04.tar.gz',
+        'xception_coco_voctrainval':
+            'deeplabv3_pascal_trainval_2018_01_04.tar.gz',
+    }
+    _TARBALL_NAME = _MODEL_URLS[MODEL_NAME]
 
-model_dir = 'deeplab_model'
-if not os.path.exists(model_dir):
-    tf.gfile.MakeDirs(model_dir)
+    model_dir = 'deeplab_model'
+    if not os.path.exists(model_dir):
+        tf.gfile.MakeDirs(model_dir)
 
-download_path = os.path.join(model_dir, _TARBALL_NAME)
-if not os.path.exists(download_path):
-    print('downloading model to %s, this might take a while...' % download_path)
-    urllib.request.urlretrieve(_DOWNLOAD_URL_PREFIX + _MODEL_URLS[MODEL_NAME],
-                               download_path)
-    print('download completed! loading DeepLab model...')
+    download_path = os.path.join(model_dir, _TARBALL_NAME)
+    if not os.path.exists(download_path):
+        print('downloading model to %s, this might take a while...' % download_path)
+        urllib.request.urlretrieve(_DOWNLOAD_URL_PREFIX + _MODEL_URLS[MODEL_NAME],
+                                   download_path)
+        print('download completed! loading DeepLab model...')
 
-MODEL = DeepLabModel(download_path)
-print('model loaded successfully!')
+    MODEL = DeepLabModel(download_path)
+    print('model loaded successfully!')
 
-#######################################################################################
+    #######################################################################################
 
+    list_im = glob.glob(dir_name + '/*_img.png')
+    list_im.sort()
 
-list_im = glob.glob(dir_name + '/*_img.png')
-list_im.sort()
+    for i in range(0, len(list_im)):
+        image = Image.open(list_im[i])
 
-for i in range(0, len(list_im)):
-    image = Image.open(list_im[i])
+        res_im, seg = MODEL.run(image)
 
-    res_im, seg = MODEL.run(image)
+        seg = cv2.resize(seg.astype(np.uint8), image.size)
 
-    seg = cv2.resize(seg.astype(np.uint8), image.size)
+        mask_sel = (seg == 15).astype(np.float32)
 
-    mask_sel = (seg == 15).astype(np.float32)
+        name = list_im[i].replace('img', 'masksDL')
+        cv2.imwrite(name, (255 * mask_sel).astype(np.uint8))
 
-    name = list_im[i].replace('img', 'masksDL')
-    cv2.imwrite(name, (255 * mask_sel).astype(np.uint8))
-
-str_msg = '\nDone: ' + dir_name
-print(str_msg)
+    str_msg = '\nDone: ' + dir_name
+    print(str_msg)
