@@ -16,6 +16,7 @@ Go to Project page for additional details and results.
 ## [**Background Matting v2.0**](http://grail.cs.washington.edu/projects/background-matting-v2/)
 We recently released a brand new background matting project: better quality and REAL-TIME performance (60fps at 4K and 30fps at FHD)!
 You can now use this with Zoom! Much better quality! We tried this on a Linux machine with a GPU.
+
 [Check out the code!](https://github.com/PeterL1n/BackgroundMattingV2)
 
 
