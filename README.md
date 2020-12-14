@@ -13,6 +13,12 @@ Go to Project page for additional details and results.
 
 ## [Blog Post](https://towardsdatascience.com/background-matting-the-world-is-your-green-screen-83a3c4f0f635?source=friends_link&sk=03e1a2de548367b22139568a7c798180&gi=85b436f7c556)
 
+## [**Background Matting v2.0**](http://grail.cs.washington.edu/projects/background-matting-v2/)
+We recently released a brand new background matting project: better quality and REAL-TIME performance (60fps at 4K and 30fps at FHD)!
+You can now use this with Zoom! Much better quality! We tried this on a Linux machine with a GPU.
+[Check out the code!](https://github.com/PeterL1n/BackgroundMattingV2)
+
+
 ## Project members ##
 
 * [Soumyadip Sengupta](https://homes.cs.washington.edu/~soumya91/), University of Washington
