@@ -44,9 +44,9 @@ else:
     back_img10 = cv2.cvtColor(back_img10, cv2.COLOR_BGR2RGB)
     # Green-screen background
     back_img20 = np.zeros(back_img10.shape)
-    back_img20[..., 0] = 120
+    back_img20[..., 0] = 0
     back_img20[..., 1] = 255
-    back_img20[..., 2] = 155
+    back_img20[..., 2] = 0
 
 # initialize network
 fo = glob.glob(model_main_dir + 'netG_epoch_*')
@@ -95,9 +95,9 @@ for i in range(0, len(test_imgs)):
         back_img10 = cv2.cvtColor(back_img10, cv2.COLOR_BGR2RGB)
         # Green-screen background
         back_img20 = np.zeros(back_img10.shape)
-        back_img20[..., 0] = 120
+        back_img20[..., 0] = 0
         back_img20[..., 1] = 255
-        back_img20[..., 2] = 155
+        back_img20[..., 2] = 0
 
         # create multiple frames with adjoining frames
         gap = 20
