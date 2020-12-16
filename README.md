@@ -124,9 +124,7 @@ Background Matting needs a segmentation mask for the subject. We use tensorflow 
 ```
 cd Background-Matting/
 git clone https://github.com/tensorflow/models.git
-cd models/research/
-export PYTHONPATH=$PYTHONPATH:`pwd`:`pwd`/slim
-cd ../..
+export PYTHONPATH=$PYTHONPATH:`pwd`:`pwd`/models/research/slim
 python test_segmentation_deeplab.py -i sample_data/input
 ```
 
@@ -181,9 +179,8 @@ Repeat the same for `sample_video_fixed`
 
 2. Segmentation
 ```
-cd Background-Matting/models/research/
-export PYTHONPATH=$PYTHONPATH:`pwd`:`pwd`/slim
-cd ../..
+cd Background-Matting/
+export PYTHONPATH=$PYTHONPATH:`pwd`:`pwd`/models/research/slim
 python test_segmentation_deeplab.py -i sample_video/input
 ```
 
