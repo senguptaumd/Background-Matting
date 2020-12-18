@@ -41,7 +41,7 @@ else:
     target_img = cv2.imread(args.target_back)
     target_img = cv2.cvtColor(target_img, cv2.COLOR_BGR2RGB)
     # Green-screen background
-    target_green_img = np.zeros(target_img.shape)
+    target_green_img = np.zeros(target_img.shape, dtype=np.uint8)
     target_green_img[..., 0] = 0
     target_green_img[..., 1] = 255
     target_green_img[..., 2] = 0
