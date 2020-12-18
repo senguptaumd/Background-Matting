@@ -3,6 +3,7 @@ from __future__ import print_function
 import argparse
 import glob
 import os
+import sys
 
 import torch.backends.cudnn as cudnn
 import torch.nn as nn
@@ -63,74 +64,80 @@ if args.back is not None:
     back_img = cv2.imread(args.back)
     back_img = cv2.cvtColor(back_img, cv2.COLOR_BGR2RGB)
 
-# Create a list of test images
-test_imgs = [f for f in os.listdir(data_path) if
-             os.path.isfile(os.path.join(data_path, f)) and f.endswith('_img.png')]
-test_imgs.sort()
-
 # output directory
 result_path = args.output_dir
 
 if not os.path.exists(result_path):
     os.makedirs(result_path)
 
-for i in tqdm.trange(len(test_imgs)):
-    filename = test_imgs[i]
+video = cv2.VideoCapture(data_path)
+num_frames = int(video.get(cv2.CAP_PROP_FRAME_COUNT))
+fps = int(video.get(cv2.CAP_PROP_FPS))
+width = int(video.get(cv2.CAP_PROP_FRAME_WIDTH))
+height = int(video.get(cv2.CAP_PROP_FRAME_HEIGHT))
+
+masks_video = cv2.VideoCapture(data_path.replace("_raw.mp4", "_masksDL.avi"))
+
+if not "raw" in data_path:
+    print("Wrong input file specified!")
+    sys.exit(0)
+
+# Create a video writer for cutout object placed on target
+output_path = data_path.replace("raw", "out")
+video_writer = cv2.VideoWriter(output_path,
+                               cv2.VideoWriter_fourcc(*'mp4v'),
+                               fps,
+                               (width, height))
+print("Writing video to", output_path)
+
+# Create video writer for matte. Use lossless png compression
+output_path = data_path.replace("raw", "masks").replace("mp4", "avi")
+masks_video_writer = cv2.VideoWriter(output_path,
+                                     cv2.VideoWriter_fourcc(*'png '),
+                                     fps,
+                                     (width, height))
+for i in tqdm.trange(num_frames):
 
     # original image
-    bgr_img = cv2.imread(os.path.join(data_path, filename))
+    ret, bgr_img = video.read()
     bgr_img = cv2.cvtColor(bgr_img, cv2.COLOR_BGR2RGB)
     output_height = bgr_img.shape[0]
     output_width = bgr_img.shape[1]
 
-    if args.back is None:
-        # captured background image
-        back_img = cv2.imread(os.path.join(data_path, filename.replace('_img', '_back')))
-        back_img = cv2.cvtColor(back_img, cv2.COLOR_BGR2RGB)
-
     # segmentation mask
-    seg_mask = cv2.imread(os.path.join(data_path, filename.replace('_img', '_masksDL')), 0)
+    ret, seg_mask = masks_video.read()
+    seg_mask = seg_mask[:, :, 0]
 
-    if args.video:  # if video mode, load target background frames
-        # target background path
-        target_img = cv2.imread(os.path.join(args.target_back, filename.replace('_img.png', '.png')))
-        target_img = cv2.cvtColor(target_img, cv2.COLOR_BGR2RGB)
-        # Green-screen background
-        target_green_img = np.zeros(target_img.shape)
-        target_green_img[..., 0] = 0
-        target_green_img[..., 1] = 255
-        target_green_img[..., 2] = 0
-
-        # create multiple frames with adjoining frames
-        gap = 20
-        multi_fr_w = np.zeros((output_height, output_width, 4))
-        idx = [i - 2 * gap, i - gap, i + gap, i + 2 * gap]
-        for t in range(0, 4):
-            if idx[t] < 0:
-                idx[t] = len(test_imgs) + idx[t]
-            elif idx[t] >= len(test_imgs):
-                idx[t] = idx[t] - len(test_imgs)
-
-            file_tmp = test_imgs[idx[t]]
-            bgr_img_mul = cv2.imread(os.path.join(data_path, file_tmp))
-            multi_fr_w[..., t] = cv2.cvtColor(bgr_img_mul, cv2.COLOR_BGR2GRAY)
-    else:
-        ## create the multi-frame
-        multi_fr_w = np.zeros((output_height, output_width, 4))
-        multi_fr_w[..., 0] = cv2.cvtColor(bgr_img, cv2.COLOR_BGR2GRAY)
-        multi_fr_w[..., 1] = multi_fr_w[..., 0]
-        multi_fr_w[..., 2] = multi_fr_w[..., 0]
-        multi_fr_w[..., 3] = multi_fr_w[..., 0]
+    ## create the multi-frame
+    multi_fr_w = np.zeros((output_height, output_width, 4))
+    multi_fr_w[..., 0] = cv2.cvtColor(bgr_img, cv2.COLOR_BGR2GRAY)
+    multi_fr_w[..., 1] = multi_fr_w[..., 0]
+    multi_fr_w[..., 2] = multi_fr_w[..., 0]
+    multi_fr_w[..., 3] = multi_fr_w[..., 0]
 
     # Crop all images by the bbox of the rough segmentation mask
-    bbox = get_bbox(seg_mask, R=output_height, C=output_width)
+    try:
+        bbox = get_bbox(seg_mask, R=output_height, C=output_width)
+    except: # Catch error occurring if no object is currently visible
+        masks_video_writer.write(np.zeros((output_height, output_width, 3), dtype=np.uint8))
+        target_green_img = cv2.resize(target_green_img, (output_width, output_height))
+        video_writer.write(cv2.cvtColor(target_green_img, cv2.COLOR_BGR2RGB))
+        print("Skipping frame", i)
+        continue
 
-    crop_list = [bgr_img, back_img, seg_mask, multi_fr_w]
-    crop_list = crop_images(crop_list, reso, bbox)
-    bgr_img = crop_list[0]
-    bg_im = crop_list[1]
-    seg_mask = crop_list[2]
-    multi_fr = crop_list[3]
+    try:
+        crop_list = [bgr_img, back_img, seg_mask, multi_fr_w]
+        crop_list = crop_images(crop_list, reso, bbox)
+        bgr_img = crop_list[0]
+        bg_im = crop_list[1]
+        seg_mask = crop_list[2]
+        multi_fr = crop_list[3]
+    except: # Catch error occurring if no (big enough) object is currently visible
+        masks_video_writer.write(np.zeros((output_height, output_width, 3), dtype=np.uint8))
+        target_green_img = cv2.resize(target_green_img, (output_width, output_height))
+        video_writer.write(cv2.cvtColor(target_green_img, cv2.COLOR_BGR2RGB))
+        print("Error cropping", i)
+        continue
 
     # Preprocess the rough segmentation mask
     kernel_er = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3))
@@ -180,6 +187,10 @@ for i in tqdm.trange(len(test_imgs)):
         try:
             assert (labels.max() != 0)
         except:
+            masks_video_writer.write(np.zeros((output_height, output_width, 3), dtype=np.uint8))
+            target_green_img = cv2.resize(target_green_img, (output_width, output_height))
+            video_writer.write(cv2.cvtColor(target_green_img, cv2.COLOR_BGR2RGB))
+            print("Skipping frame", i)
             continue
         largestCC = labels == np.argmax(np.bincount(labels.flat)[1:]) + 1
         alpha_out = alpha_out * largestCC
@@ -200,9 +211,10 @@ for i in tqdm.trange(len(test_imgs)):
     compose_target_img = composite4(fg_out, target_img, alpha_out)
     compose_target_green_img = composite4(fg_out, target_green_img, alpha_out)
 
-    # Write images to file
-    cv2.imwrite(result_path + '/' + filename.replace('_img', '_out'), alpha_out)
-    cv2.imwrite(result_path + '/' + filename.replace('_img', '_fg'), cv2.cvtColor(fg_out, cv2.COLOR_BGR2RGB))
-    cv2.imwrite(result_path + '/' + filename.replace('_img', '_compose'), cv2.cvtColor(compose_target_img, cv2.COLOR_BGR2RGB))
-    cv2.imwrite(result_path + '/' + filename.replace('_img', '_matte').format(i),
-                cv2.cvtColor(compose_target_green_img, cv2.COLOR_BGR2RGB))
+    # Write results to videos
+    masks_video_writer.write(np.repeat(np.expand_dims(alpha_out, -1), 3, axis=2))
+    video_writer.write(cv2.cvtColor(compose_target_green_img, cv2.COLOR_BGR2RGB))
+
+video_writer.release()
+video.release()
+print("Finished")
