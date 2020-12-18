@@ -14,7 +14,6 @@ from functions import *
 from networks import ResnetConditionHR
 
 torch.set_num_threads(1)
-print('CUDA Device(s): ' + os.environ["CUDA_VISIBLE_DEVICES"])
 
 parser = argparse.ArgumentParser(description='Background Matting.')
 parser.add_argument('-m', '--trained_model', type=str, default='real-fixed-cam',
