@@ -1,5 +1,5 @@
 numpy==1.17.0
-opencv-python==3.4.5.20
+opencv-python==3.4.7.28
 pandas
 Pillow==6.1
 scikit-image==0.14.2
